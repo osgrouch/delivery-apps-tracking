@@ -45,6 +45,19 @@ create policy "Authenticated access to shifts"
     using (true)
     with check (true);
 
+-- Table-level grants. RLS policies alone are not enough: without these,
+-- Postgres rejects every query with "permission denied for table ..."
+-- before RLS is even evaluated. service_role bypasses RLS but is not the
+-- table owner, so it still needs an explicit grant (used by
+-- scripts/import-shifts.ts). anon is intentionally left ungranted — only
+-- an authenticated session or the service role can touch these tables.
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on apps, shifts to authenticated, service_role;
+
+-- Apply the same grants automatically to any tables added later.
+alter default privileges in schema public
+    grant select, insert, update, delete on tables to authenticated, service_role;
+
 -- Seed the known delivery platforms
 insert into apps (name)
 values ('Uber Eats'), ('Doordash'), ('InstaCart')

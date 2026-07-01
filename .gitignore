@@ -43,3 +43,6 @@ next-env.d.ts
 
 # personal earnings data — imported locally via `npm run import:shifts`
 /scripts/data/shifts.json
+
+# Sentry Config File
+.env.sentry-build-plugin
