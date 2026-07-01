@@ -38,7 +38,8 @@ cp .env.local.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | app, import script | Safe to expose client-side |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | app | Safe to expose client-side; RLS enforces access |
 | `SUPABASE_SERVICE_ROLE_KEY` | import script only | Server-only secret, bypasses RLS — never expose to the client |
-| `NEXT_PUBLIC_SENTRY_DSN` | app | DSNs are safe to expose client-side |
+| `NEXT_PUBLIC_SENTRY_DSN` | app (client) | DSNs are safe to expose client-side |
+| `SENTRY_DSN` | app (server/edge) | Optional — falls back to `NEXT_PUBLIC_SENTRY_DSN` if unset |
 | `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | build only | Used to upload source maps during `next build`; not needed to run the app locally |
 
 ## 3. Install and run
