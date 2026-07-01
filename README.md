@@ -1,4 +1,4 @@
-# Delivery Shift Tracker
+# Delivery Apps Tracking (DAT)
 
 A dashboard for tracking earnings, mileage, and trips across delivery apps
 (Uber Eats, Doordash, InstaCart), with charts and a manual shift-entry form.

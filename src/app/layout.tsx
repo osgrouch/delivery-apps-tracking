@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Delivery Shift Tracker",
+  title: "Delivery Apps Tracking",
   description: "Track earnings, mileage, and trips across delivery apps.",
 };
 

@@ -7,7 +7,8 @@ export function Nav() {
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Delivery Shift Tracker
+          <span className="hidden sm:inline">Delivery Apps Tracking</span>
+          <span className="sm:hidden">DAT</span>
         </Link>
 
         <nav className="flex items-center gap-4 text-sm">
