@@ -1,5 +1,4 @@
-import { ShiftForm } from "@/components/shifts/ShiftForm";
-import { createShift } from "@/lib/actions/shifts";
+import { AddShiftsTabs } from "@/components/shifts/AddShiftsTabs";
 import { getApps } from "@/lib/queries/shifts";
 
 export default async function NewShiftPage() {
@@ -7,8 +6,8 @@ export default async function NewShiftPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Add shift</h1>
-      <ShiftForm apps={apps} action={createShift} submitLabel="Add shift" />
+      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Add shifts</h1>
+      <AddShiftsTabs apps={apps} />
     </div>
   );
 }
