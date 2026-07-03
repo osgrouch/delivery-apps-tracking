@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCurrency, formatDate, formatNumber } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatNumber, formatShortDate } from "@/lib/utils/format";
 
 describe("formatCurrency", () => {
   it("formats a number as USD currency", () => {
@@ -15,6 +15,12 @@ describe("formatCurrency", () => {
 describe("formatDate", () => {
   it("formats an ISO date string without shifting the day", () => {
     expect(formatDate("2026-01-01")).toBe("Jan 1, 2026");
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formats an ISO date string as compact M/D without shifting the day", () => {
+    expect(formatShortDate("2026-01-01")).toBe("1/1");
   });
 });
 

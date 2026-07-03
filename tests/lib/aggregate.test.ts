@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addDaysISO,
   aggregateByApp,
   aggregateByDate,
+  aggregateWeekByApp,
   computeTotals,
   deriveShiftMetrics,
+  getMondayOfWeek,
 } from "@/lib/utils/aggregate";
 
 describe("deriveShiftMetrics", () => {
@@ -87,5 +90,90 @@ describe("aggregateByApp", () => {
       { appName: "Uber Eats", earnings: 100, shiftCount: 1, dollarsPerHour: 25 },
       { appName: "Doordash", earnings: 50, shiftCount: 2, dollarsPerHour: 50 / 3 },
     ]);
+  });
+});
+
+describe("getMondayOfWeek", () => {
+  it("returns the same date when given a Monday", () => {
+    expect(getMondayOfWeek("2026-06-29")).toBe("2026-06-29");
+  });
+
+  it("rolls a Thursday back to the preceding Monday", () => {
+    expect(getMondayOfWeek("2026-07-02")).toBe("2026-06-29");
+  });
+
+  it("rolls a Sunday back to the preceding Monday", () => {
+    expect(getMondayOfWeek("2026-07-05")).toBe("2026-06-29");
+  });
+});
+
+describe("addDaysISO", () => {
+  it("adds days, including across a month boundary", () => {
+    expect(addDaysISO("2026-06-29", 6)).toBe("2026-07-05");
+  });
+
+  it("subtracts days when given a negative count", () => {
+    expect(addDaysISO("2026-06-29", -7)).toBe("2026-06-22");
+  });
+});
+
+describe("aggregateWeekByApp", () => {
+  const apps = [
+    { id: 1, name: "Doordash" },
+    { id: 2, name: "Uber Eats" },
+  ];
+
+  it("builds all 7 days with every app present, zeroed where there's no shift", () => {
+    const result = aggregateWeekByApp([], apps, "2026-06-29");
+
+    expect(result).toHaveLength(7);
+    expect(result[0]).toEqual({
+      date: "2026-06-29",
+      weekday: "Mon",
+      totalEarnings: 0,
+      totalHours: 0,
+      avgDollarsPerHour: 0,
+      byApp: [
+        { appId: 1, appName: "Doordash", earnings: 0, hours: 0, dollarsPerHour: 0 },
+        { appId: 2, appName: "Uber Eats", earnings: 0, hours: 0, dollarsPerHour: 0 },
+      ],
+    });
+    expect(result[6].date).toBe("2026-07-05");
+    expect(result[6].weekday).toBe("Sun");
+  });
+
+  it("sums earnings and hours per app per day and computes day totals/rates", () => {
+    const shifts = [
+      { date: "2026-06-29", earnings: 50, hours: 2, app: { id: 1, name: "Doordash" } },
+      { date: "2026-06-29", earnings: 20, hours: 1, app: { id: 2, name: "Uber Eats" } },
+      { date: "2026-06-30", earnings: 30, hours: 3, app: { id: 1, name: "Doordash" } },
+    ];
+
+    const result = aggregateWeekByApp(shifts, apps, "2026-06-29");
+
+    expect(result[0].totalEarnings).toBe(70);
+    expect(result[0].totalHours).toBe(3);
+    expect(result[0].avgDollarsPerHour).toBeCloseTo(23.33, 2);
+    expect(result[0].byApp).toEqual([
+      { appId: 1, appName: "Doordash", earnings: 50, hours: 2, dollarsPerHour: 25 },
+      { appId: 2, appName: "Uber Eats", earnings: 20, hours: 1, dollarsPerHour: 20 },
+    ]);
+
+    expect(result[1].totalEarnings).toBe(30);
+    expect(result[1].byApp[0]).toEqual({
+      appId: 1,
+      appName: "Doordash",
+      earnings: 30,
+      hours: 3,
+      dollarsPerHour: 10,
+    });
+  });
+
+  it("ignores shifts outside the requested week", () => {
+    const shifts = [{ date: "2026-07-10", earnings: 100, hours: 4, app: { id: 1, name: "Doordash" } }];
+
+    const result = aggregateWeekByApp(shifts, apps, "2026-06-29");
+
+    expect(result.every((day) => day.totalEarnings === 0)).toBe(true);
   });
 });

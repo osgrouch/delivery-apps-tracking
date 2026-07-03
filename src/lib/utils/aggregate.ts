@@ -1,9 +1,12 @@
-import type { ShiftWithApp } from "@/types/database.types";
+import type { App, ShiftWithApp } from "@/types/database.types";
 
 type EarningsShift = Pick<ShiftWithApp, "earnings" | "hours" | "mileage" | "trips">;
 type DatedEarningsShift = EarningsShift & Pick<ShiftWithApp, "date">;
 type AppEarningsShift = Pick<ShiftWithApp, "earnings" | "hours"> & {
   app: Pick<ShiftWithApp["app"], "name">;
+};
+type WeeklyShift = Pick<ShiftWithApp, "date" | "earnings" | "hours"> & {
+  app: Pick<ShiftWithApp["app"], "id" | "name">;
 };
 
 export interface DerivedMetrics {
@@ -112,4 +115,86 @@ export function aggregateByApp(shifts: readonly AppEarningsShift[]): EarningsByA
       dollarsPerHour: totals.hours > 0 ? totals.earnings / totals.hours : 0,
     }))
     .sort((a, b) => b.earnings - a.earnings);
+}
+
+const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** Monday (ISO date) of the week containing the given date. All arithmetic is UTC-anchored to avoid local-timezone day shifts. */
+export function getMondayOfWeek(dateISO: string): string {
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+  return date.toISOString().slice(0, 10);
+}
+
+export function addDaysISO(dateISO: string, days: number): string {
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export interface WeeklyAppEarnings {
+  appId: number;
+  appName: string;
+  earnings: number;
+  hours: number;
+  dollarsPerHour: number;
+}
+
+export interface WeeklyDayEarnings {
+  date: string;
+  weekday: string;
+  totalEarnings: number;
+  totalHours: number;
+  avgDollarsPerHour: number;
+  byApp: WeeklyAppEarnings[];
+}
+
+/**
+ * Builds one entry per day (Monday-Sunday) for the week starting at
+ * weekStartISO, with a per-app earnings/hours breakdown for each day.
+ * Every app and every day is always present (zeroed if there's no
+ * matching shift), so stacked-bar charts get a stable set of series.
+ */
+export function aggregateWeekByApp(
+  shifts: readonly WeeklyShift[],
+  apps: readonly Pick<App, "id" | "name">[],
+  weekStartISO: string,
+): WeeklyDayEarnings[] {
+  const days: WeeklyDayEarnings[] = Array.from({ length: 7 }, (_, i) => ({
+    date: addDaysISO(weekStartISO, i),
+    weekday: WEEKDAY_LABELS[i],
+    totalEarnings: 0,
+    totalHours: 0,
+    avgDollarsPerHour: 0,
+    byApp: apps.map((app) => ({
+      appId: app.id,
+      appName: app.name,
+      earnings: 0,
+      hours: 0,
+      dollarsPerHour: 0,
+    })),
+  }));
+
+  const dayByDate = new Map(days.map((day) => [day.date, day]));
+
+  for (const shift of shifts) {
+    const day = dayByDate.get(shift.date);
+    const appEntry = day?.byApp.find((entry) => entry.appId === shift.app.id);
+    if (!day || !appEntry) continue;
+
+    appEntry.earnings += shift.earnings;
+    appEntry.hours += shift.hours;
+    day.totalEarnings += shift.earnings;
+    day.totalHours += shift.hours;
+  }
+
+  for (const day of days) {
+    for (const appEntry of day.byApp) {
+      appEntry.dollarsPerHour = appEntry.hours > 0 ? appEntry.earnings / appEntry.hours : 0;
+    }
+    day.avgDollarsPerHour = day.totalHours > 0 ? day.totalEarnings / day.totalHours : 0;
+  }
+
+  return days;
 }

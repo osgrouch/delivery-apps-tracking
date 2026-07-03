@@ -9,6 +9,11 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "numeric",
+  day: "numeric",
+});
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
@@ -17,6 +22,11 @@ export function formatDate(isoDate: string): string {
   // Append a time to avoid the browser interpreting a bare "YYYY-MM-DD"
   // as UTC midnight and rendering the previous day in negative-offset zones.
   return dateFormatter.format(new Date(`${isoDate}T00:00:00`));
+}
+
+/** Compact "M/D" form, e.g. for chart axis ticks where space is tight. */
+export function formatShortDate(isoDate: string): string {
+  return shortDateFormatter.format(new Date(`${isoDate}T00:00:00`));
 }
 
 export function formatNumber(value: number, fractionDigits = 1): string {
