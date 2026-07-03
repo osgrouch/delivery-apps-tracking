@@ -1,5 +1,6 @@
 import { AppBreakdownChart } from "@/components/charts/AppBreakdownChart";
 import { EarningsOverTimeChart } from "@/components/charts/EarningsOverTimeChart";
+import { MonthlyEarningsChart } from "@/components/charts/MonthlyEarningsChart";
 import { WeeklyEarningsChart } from "@/components/charts/WeeklyEarningsChart";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { getApps, getShifts } from "@/lib/queries/shifts";
@@ -7,8 +8,10 @@ import {
   aggregateByApp,
   aggregateByDate,
   aggregateWeekByApp,
+  aggregateYearByApp,
   computeTotals,
   getMondayOfWeek,
+  getYearRange,
 } from "@/lib/utils/aggregate";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
 
@@ -22,8 +25,15 @@ export default async function DashboardPage() {
   const totals = computeTotals(shifts);
   const earningsByDate = aggregateByDate(shifts);
   const earningsByApp = aggregateByApp(shifts);
-  const weekStart = getMondayOfWeek(todayISODate());
+
+  const today = todayISODate();
+  const currentYear = Number(today.slice(0, 4));
+
+  const weekStart = getMondayOfWeek(today);
   const weeklyEarnings = aggregateWeekByApp(shifts, apps, weekStart);
+
+  const monthlyEarnings = aggregateYearByApp(shifts, apps, currentYear);
+  const yearRange = getYearRange(shifts) ?? { minYear: currentYear, maxYear: currentYear };
 
   return (
     <div className="flex flex-col gap-8">
@@ -61,6 +71,16 @@ export default async function DashboardPage() {
 
       <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <WeeklyEarningsChart apps={apps} initialWeekStart={weekStart} initialData={weeklyEarnings} />
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <MonthlyEarningsChart
+          apps={apps}
+          initialYear={currentYear}
+          initialData={monthlyEarnings}
+          minYear={yearRange.minYear}
+          maxYear={yearRange.maxYear}
+        />
       </div>
     </div>
   );

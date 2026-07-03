@@ -13,21 +13,12 @@ import {
 } from "recharts";
 import type { TooltipContentProps, XAxisTickContentProps } from "recharts";
 
+import { EarningsBreakdownTooltip } from "@/components/charts/EarningsBreakdownTooltip";
 import { getWeeklyEarnings } from "@/lib/actions/dashboard";
 import { addDaysISO, type WeeklyDayEarnings } from "@/lib/utils/aggregate";
-import { formatCurrency, formatNumber, formatShortDate } from "@/lib/utils/format";
+import { colorForApp } from "@/lib/utils/appColors";
+import { formatCurrency, formatShortDate } from "@/lib/utils/format";
 import type { App } from "@/types/database.types";
-
-const APP_BRAND_COLORS: Record<string, string> = {
-  "uber eats": "#286ef0",
-  doordash: "#f72e09",
-  instacart: "#09af07",
-};
-const FALLBACK_COLORS = ["#9333ea", "#0891b2", "#f59e0b", "#64748b"];
-
-function colorForApp(appName: string, fallbackIndex: number): string {
-  return APP_BRAND_COLORS[appName.toLowerCase()] ?? FALLBACK_COLORS[fallbackIndex % FALLBACK_COLORS.length];
-}
 
 function WeekdayTick({ x, y, payload, days }: XAxisTickContentProps & { days: WeeklyDayEarnings[] }) {
   const day = days.find((d) => d.date === payload.value);
@@ -52,35 +43,14 @@ function WeeklyTooltip({
   const day = payload[0].payload as WeeklyDayEarnings;
 
   return (
-    <div className="rounded-md border border-zinc-200 bg-white p-3 text-xs shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-50">
-        {day.weekday}, {formatShortDate(day.date)}
-      </p>
-      <div className="flex flex-col gap-1">
-        {day.byApp.map((app) => (
-          <div key={app.appId} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: colorByAppId.get(app.appId) }}
-              />
-              {app.appName}
-            </span>
-            <span className="tabular-nums text-zinc-700 dark:text-zinc-300">
-              {formatCurrency(app.earnings)} · {formatNumber(app.hours)}h ·{" "}
-              {formatCurrency(app.dollarsPerHour)}/hr
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-200 pt-2 font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
-        <span>Total</span>
-        <span className="tabular-nums">
-          {formatCurrency(day.totalEarnings)} · {formatNumber(day.totalHours)}h ·{" "}
-          {formatCurrency(day.avgDollarsPerHour)}/hr
-        </span>
-      </div>
-    </div>
+    <EarningsBreakdownTooltip
+      header={`${day.weekday}, ${formatShortDate(day.date)}`}
+      byApp={day.byApp}
+      totalEarnings={day.totalEarnings}
+      totalHours={day.totalHours}
+      avgDollarsPerHour={day.avgDollarsPerHour}
+      colorByAppId={colorByAppId}
+    />
   );
 }
 

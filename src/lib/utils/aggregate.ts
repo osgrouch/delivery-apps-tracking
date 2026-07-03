@@ -5,7 +5,7 @@ type DatedEarningsShift = EarningsShift & Pick<ShiftWithApp, "date">;
 type AppEarningsShift = Pick<ShiftWithApp, "earnings" | "hours"> & {
   app: Pick<ShiftWithApp["app"], "name">;
 };
-type WeeklyShift = Pick<ShiftWithApp, "date" | "earnings" | "hours"> & {
+type AppDatedShift = Pick<ShiftWithApp, "date" | "earnings" | "hours"> & {
   app: Pick<ShiftWithApp["app"], "id" | "name">;
 };
 
@@ -133,7 +133,7 @@ export function addDaysISO(dateISO: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export interface WeeklyAppEarnings {
+export interface AppBreakdown {
   appId: number;
   appName: string;
   earnings: number;
@@ -147,7 +147,23 @@ export interface WeeklyDayEarnings {
   totalEarnings: number;
   totalHours: number;
   avgDollarsPerHour: number;
-  byApp: WeeklyAppEarnings[];
+  byApp: AppBreakdown[];
+}
+
+function emptyAppBreakdown(apps: readonly Pick<App, "id" | "name">[]): AppBreakdown[] {
+  return apps.map((app) => ({
+    appId: app.id,
+    appName: app.name,
+    earnings: 0,
+    hours: 0,
+    dollarsPerHour: 0,
+  }));
+}
+
+function finalizeAppRates(byApp: AppBreakdown[]): void {
+  for (const appEntry of byApp) {
+    appEntry.dollarsPerHour = appEntry.hours > 0 ? appEntry.earnings / appEntry.hours : 0;
+  }
 }
 
 /**
@@ -157,7 +173,7 @@ export interface WeeklyDayEarnings {
  * matching shift), so stacked-bar charts get a stable set of series.
  */
 export function aggregateWeekByApp(
-  shifts: readonly WeeklyShift[],
+  shifts: readonly AppDatedShift[],
   apps: readonly Pick<App, "id" | "name">[],
   weekStartISO: string,
 ): WeeklyDayEarnings[] {
@@ -167,13 +183,7 @@ export function aggregateWeekByApp(
     totalEarnings: 0,
     totalHours: 0,
     avgDollarsPerHour: 0,
-    byApp: apps.map((app) => ({
-      appId: app.id,
-      appName: app.name,
-      earnings: 0,
-      hours: 0,
-      dollarsPerHour: 0,
-    })),
+    byApp: emptyAppBreakdown(apps),
   }));
 
   const dayByDate = new Map(days.map((day) => [day.date, day]));
@@ -190,11 +200,92 @@ export function aggregateWeekByApp(
   }
 
   for (const day of days) {
-    for (const appEntry of day.byApp) {
-      appEntry.dollarsPerHour = appEntry.hours > 0 ? appEntry.earnings / appEntry.hours : 0;
-    }
+    finalizeAppRates(day.byApp);
     day.avgDollarsPerHour = day.totalHours > 0 ? day.totalEarnings / day.totalHours : 0;
   }
 
   return days;
+}
+
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export interface MonthlyEarnings {
+  month: number;
+  monthLabel: string;
+  totalEarnings: number;
+  totalHours: number;
+  avgDollarsPerHour: number;
+  byApp: AppBreakdown[];
+}
+
+/**
+ * Builds one entry per calendar month (Jan-Dec) for the given year, with a
+ * per-app earnings/hours breakdown for each month. Every app and every
+ * month is always present (zeroed if there's no matching shift).
+ */
+export function aggregateYearByApp(
+  shifts: readonly AppDatedShift[],
+  apps: readonly Pick<App, "id" | "name">[],
+  year: number,
+): MonthlyEarnings[] {
+  const months: MonthlyEarnings[] = Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    monthLabel: MONTH_LABELS[i],
+    totalEarnings: 0,
+    totalHours: 0,
+    avgDollarsPerHour: 0,
+    byApp: emptyAppBreakdown(apps),
+  }));
+
+  for (const shift of shifts) {
+    const [shiftYear, shiftMonth] = shift.date.split("-").map(Number);
+    if (shiftYear !== year) continue;
+
+    const month = months[shiftMonth - 1];
+    const appEntry = month.byApp.find((entry) => entry.appId === shift.app.id);
+    if (!appEntry) continue;
+
+    appEntry.earnings += shift.earnings;
+    appEntry.hours += shift.hours;
+    month.totalEarnings += shift.earnings;
+    month.totalHours += shift.hours;
+  }
+
+  for (const month of months) {
+    finalizeAppRates(month.byApp);
+    month.avgDollarsPerHour = month.totalHours > 0 ? month.totalEarnings / month.totalHours : 0;
+  }
+
+  return months;
+}
+
+/** The inclusive range of calendar years present in the given shifts, or null if there are none. */
+export function getYearRange(shifts: readonly Pick<ShiftWithApp, "date">[]): {
+  minYear: number;
+  maxYear: number;
+} | null {
+  if (shifts.length === 0) return null;
+
+  let minYear = Infinity;
+  let maxYear = -Infinity;
+  for (const shift of shifts) {
+    const year = Number(shift.date.slice(0, 4));
+    if (year < minYear) minYear = year;
+    if (year > maxYear) maxYear = year;
+  }
+
+  return { minYear, maxYear };
 }

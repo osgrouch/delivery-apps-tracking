@@ -5,9 +5,11 @@ import {
   aggregateByApp,
   aggregateByDate,
   aggregateWeekByApp,
+  aggregateYearByApp,
   computeTotals,
   deriveShiftMetrics,
   getMondayOfWeek,
+  getYearRange,
 } from "@/lib/utils/aggregate";
 
 describe("deriveShiftMetrics", () => {
@@ -175,5 +177,84 @@ describe("aggregateWeekByApp", () => {
     const result = aggregateWeekByApp(shifts, apps, "2026-06-29");
 
     expect(result.every((day) => day.totalEarnings === 0)).toBe(true);
+  });
+});
+
+describe("aggregateYearByApp", () => {
+  const apps = [
+    { id: 1, name: "Doordash" },
+    { id: 2, name: "Uber Eats" },
+  ];
+
+  it("builds all 12 months with every app present, zeroed where there's no shift", () => {
+    const result = aggregateYearByApp([], apps, 2026);
+
+    expect(result).toHaveLength(12);
+    expect(result[0]).toEqual({
+      month: 1,
+      monthLabel: "Jan",
+      totalEarnings: 0,
+      totalHours: 0,
+      avgDollarsPerHour: 0,
+      byApp: [
+        { appId: 1, appName: "Doordash", earnings: 0, hours: 0, dollarsPerHour: 0 },
+        { appId: 2, appName: "Uber Eats", earnings: 0, hours: 0, dollarsPerHour: 0 },
+      ],
+    });
+    expect(result[11].month).toBe(12);
+    expect(result[11].monthLabel).toBe("Dec");
+  });
+
+  it("sums earnings and hours per app per month and computes month totals/rates", () => {
+    const shifts = [
+      { date: "2026-01-05", earnings: 50, hours: 2, app: { id: 1, name: "Doordash" } },
+      { date: "2026-01-20", earnings: 20, hours: 1, app: { id: 2, name: "Uber Eats" } },
+      { date: "2026-02-01", earnings: 30, hours: 3, app: { id: 1, name: "Doordash" } },
+    ];
+
+    const result = aggregateYearByApp(shifts, apps, 2026);
+
+    expect(result[0].totalEarnings).toBe(70);
+    expect(result[0].totalHours).toBe(3);
+    expect(result[0].avgDollarsPerHour).toBeCloseTo(23.33, 2);
+    expect(result[0].byApp).toEqual([
+      { appId: 1, appName: "Doordash", earnings: 50, hours: 2, dollarsPerHour: 25 },
+      { appId: 2, appName: "Uber Eats", earnings: 20, hours: 1, dollarsPerHour: 20 },
+    ]);
+
+    expect(result[1].totalEarnings).toBe(30);
+    expect(result[1].byApp[0]).toEqual({
+      appId: 1,
+      appName: "Doordash",
+      earnings: 30,
+      hours: 3,
+      dollarsPerHour: 10,
+    });
+  });
+
+  it("ignores shifts outside the requested year", () => {
+    const shifts = [{ date: "2025-06-01", earnings: 100, hours: 4, app: { id: 1, name: "Doordash" } }];
+
+    const result = aggregateYearByApp(shifts, apps, 2026);
+
+    expect(result.every((month) => month.totalEarnings === 0)).toBe(true);
+  });
+});
+
+describe("getYearRange", () => {
+  it("returns null for no shifts", () => {
+    expect(getYearRange([])).toBeNull();
+  });
+
+  it("returns the min and max year across shifts", () => {
+    const result = getYearRange([{ date: "2026-03-01" }, { date: "2024-11-01" }, { date: "2025-01-01" }]);
+
+    expect(result).toEqual({ minYear: 2024, maxYear: 2026 });
+  });
+
+  it("returns the same year twice when all shifts are in one year", () => {
+    const result = getYearRange([{ date: "2026-01-01" }, { date: "2026-12-31" }]);
+
+    expect(result).toEqual({ minYear: 2026, maxYear: 2026 });
   });
 });
