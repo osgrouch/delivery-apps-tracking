@@ -17,7 +17,7 @@ export function DeleteShiftButton({ id }: { id: string }) {
           void deleteShift(id);
         });
       }}
-      className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+      className="text-sm text-destructive hover:text-destructive/80 disabled:opacity-50"
     >
       {isPending ? "Deleting…" : "Delete"}
     </button>

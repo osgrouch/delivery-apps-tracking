@@ -1,18 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { WeeklyEarningsBarChart } from "@/components/charts/WeeklyEarningsBarChart";
 import { DayRow } from "@/components/weekly/DayRow";
 import { WeekCalendar } from "@/components/weekly/WeekCalendar";
+import { Spinner } from "@/components/ui/Spinner";
 import {
   addDaysISO,
   aggregateWeekByApp,
+  computeTotals,
   groupShiftsByWeekday,
   type DateApp,
 } from "@/lib/utils/aggregate";
 import { colorForApp } from "@/lib/utils/appColors";
-import { formatShortDate } from "@/lib/utils/format";
+import { formatCurrency, formatNumber, formatShortDate } from "@/lib/utils/format";
 import type { App, ShiftWithApp } from "@/types/database.types";
 
 const WEEKDAY_FULL_LABELS = [
@@ -41,6 +43,22 @@ export function WeeklyFocusView({
   appsByDate,
 }: WeeklyFocusViewProps) {
   const [selectedWeekStart, setSelectedWeekStart] = useState(initialWeekStart);
+  const [isChangingWeek, setIsChangingWeek] = useState(false);
+  const changeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (changeTimeoutRef.current) clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
+  function handleSelectWeek(weekStart: string) {
+    if (weekStart === selectedWeekStart) return;
+    setSelectedWeekStart(weekStart);
+    setIsChangingWeek(true);
+    if (changeTimeoutRef.current) clearTimeout(changeTimeoutRef.current);
+    changeTimeoutRef.current = setTimeout(() => setIsChangingWeek(false), 700);
+  }
 
   const colorByAppId = useMemo(
     () => new Map(apps.map((app, index) => [app.id, colorForApp(app.name, index)])),
@@ -57,20 +75,41 @@ export function WeeklyFocusView({
     [shifts, selectedWeekStart],
   );
 
+  const selectedWeekShifts = useMemo(() => shiftsByWeekday.flat(), [shiftsByWeekday]);
+
+  const weekTotals = useMemo(() => computeTotals(selectedWeekShifts), [selectedWeekShifts]);
+
+  const footerItems = useMemo(
+    () => [
+      { label: "Week Total", value: formatCurrency(weekTotals.totalEarnings) },
+      { label: "Total Miles", value: `${formatNumber(weekTotals.totalMileage)} mi` },
+      { label: "Total Trips", value: weekTotals.totalTrips.toString() },
+      { label: "Total Hours", value: `${formatNumber(weekTotals.totalHours)}h` },
+      { label: "Avg $/Hour", value: formatCurrency(weekTotals.avgDollarsPerHour) },
+      { label: "Avg $/Mile", value: formatCurrency(weekTotals.avgDollarsPerMile) },
+    ],
+    [weekTotals],
+  );
+
   return (
-    <div className="grid h-full w-full grid-cols-[35%_75%] overflow-hidden">
-      <div className="grid min-h-0 grid-rows-[45%_55%] border-r border-zinc-200 dark:border-zinc-800">
-        <div className="flex min-h-0 flex-col gap-2 overflow-hidden border-b border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="grid h-full w-full grid-cols-[35%_65%] overflow-hidden">
+      <div className="grid min-h-0 grid-rows-[45%_55%] border-r border-border">
+        <div className="flex min-h-0 flex-col gap-2 overflow-hidden border-b border-border p-4">
           <div>
-            <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <h2 className="text-sm font-medium text-secondary-foreground">
               Weekly earnings by app
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="font-mono text-xs text-muted-foreground">
               {formatShortDate(selectedWeekStart)}–{formatShortDate(addDaysISO(selectedWeekStart, 6))}
             </p>
           </div>
-          <div className="min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1">
             <WeeklyEarningsBarChart apps={apps} days={selectedWeekData} height="100%" />
+            {isChangingWeek ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-card/70 backdrop-blur-sm">
+                <Spinner />
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -78,23 +117,43 @@ export function WeeklyFocusView({
           <WeekCalendar
             weekStarts={weekStarts}
             selectedWeekStart={selectedWeekStart}
-            onSelectWeek={setSelectedWeekStart}
+            onSelectWeek={handleSelectWeek}
             appsByDate={appsByDate}
             colorByAppId={colorByAppId}
           />
         </div>
       </div>
 
-      <div className="min-h-0 overflow-x-hidden overflow-y-auto">
-        {WEEKDAY_FULL_LABELS.map((label, index) => (
-          <DayRow
-            key={label}
-            label={label}
-            date={addDaysISO(selectedWeekStart, index)}
-            shifts={shiftsByWeekday[index]}
-            colorByAppId={colorByAppId}
-          />
-        ))}
+      <div className="flex min-h-0 flex-col">
+        <div className="relative min-h-0 flex-1">
+          <div className="h-full overflow-x-hidden overflow-y-auto">
+            {WEEKDAY_FULL_LABELS.map((label, index) => (
+              <DayRow
+                key={label}
+                label={label}
+                date={addDaysISO(selectedWeekStart, index)}
+                shifts={shiftsByWeekday[index]}
+                colorByAppId={colorByAppId}
+              />
+            ))}
+          </div>
+          {isChangingWeek ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+              <Spinner />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap gap-8 border-t border-border bg-card/40 px-6 py-3">
+          {footerItems.map((item) => (
+            <div key={item.label} className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
+                {item.label}
+              </span>
+              <span className="font-mono text-sm font-medium text-foreground">{item.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

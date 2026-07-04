@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCurrency, formatDate, formatMonthYear, formatNumber, formatShortDate } from "@/lib/utils/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDuration,
+  formatMonthYear,
+  formatNumber,
+  formatShortDate,
+} from "@/lib/utils/format";
 
 describe("formatCurrency", () => {
   it("formats a number as USD currency", () => {
@@ -31,6 +38,20 @@ describe("formatMonthYear", () => {
 
   it("does not shift to the previous month across a year boundary", () => {
     expect(formatMonthYear(2026, 1)).toBe("January 2026");
+  });
+});
+
+describe("formatDuration", () => {
+  it("omits minutes for a whole number of hours", () => {
+    expect(formatDuration(4)).toBe("4h");
+  });
+
+  it("includes minutes for a fractional number of hours", () => {
+    expect(formatDuration(2.5)).toBe("2h 30m");
+  });
+
+  it("rounds to the nearest minute", () => {
+    expect(formatDuration(1.98)).toBe("1h 59m");
   });
 });
 

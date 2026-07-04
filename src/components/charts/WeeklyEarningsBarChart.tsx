@@ -16,6 +16,12 @@ import type { TooltipContentProps, XAxisTickContentProps } from "recharts";
 import { EarningsBreakdownTooltip } from "@/components/charts/EarningsBreakdownTooltip";
 import type { WeeklyDayEarnings } from "@/lib/utils/aggregate";
 import { colorForApp } from "@/lib/utils/appColors";
+import {
+  CHART_CURSOR_FILL,
+  CHART_GRID_STROKE,
+  CHART_LEGEND_STYLE,
+  CHART_TICK_STYLE,
+} from "@/lib/utils/chartTheme";
 import { formatCurrency, formatShortDate } from "@/lib/utils/format";
 import type { App } from "@/types/database.types";
 
@@ -23,10 +29,10 @@ function WeekdayTick({ x, y, payload, days }: XAxisTickContentProps & { days: We
   const day = days.find((d) => d.date === payload.value);
   return (
     <g transform={`translate(${x},${y})`}>
-      <text dy={14} textAnchor="middle" className="fill-zinc-700 text-xs font-medium dark:fill-zinc-300">
+      <text dy={14} textAnchor="middle" className="fill-foreground text-xs font-medium">
         {day?.weekday ?? ""}
       </text>
-      <text dy={28} textAnchor="middle" className="fill-zinc-400 text-[10px] dark:fill-zinc-500">
+      <text dy={28} textAnchor="middle" className="fill-muted-foreground text-[10px]">
         {day ? formatShortDate(day.date) : ""}
       </text>
     </g>
@@ -69,7 +75,7 @@ export function WeeklyEarningsBarChart({ apps, days, height = 320 }: WeeklyEarni
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={days} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-zinc-200 dark:stroke-zinc-800" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
         <XAxis
           dataKey="date"
           interval={0}
@@ -78,15 +84,15 @@ export function WeeklyEarningsBarChart({ apps, days, height = 320 }: WeeklyEarni
         />
         <YAxis
           tickFormatter={(value: number) => formatCurrency(value)}
-          tick={{ fontSize: 12 }}
+          tick={CHART_TICK_STYLE}
           width={72}
         />
         <Tooltip
           content={(props) => <WeeklyTooltip {...props} colorByAppId={colorByAppId} />}
-          cursor={{ fill: "rgba(0,0,0,0.04)" }}
+          cursor={CHART_CURSOR_FILL}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
-        {apps.map((app, index) => (
+        <Legend wrapperStyle={CHART_LEGEND_STYLE} />
+        {apps.map((app) => (
           <Bar
             key={app.id}
             dataKey={(entry: WeeklyDayEarnings) =>
@@ -94,7 +100,7 @@ export function WeeklyEarningsBarChart({ apps, days, height = 320 }: WeeklyEarni
             }
             name={app.name}
             stackId="earnings"
-            fill={colorForApp(app.name, index)}
+            fill={colorByAppId.get(app.id)}
           />
         ))}
       </BarChart>

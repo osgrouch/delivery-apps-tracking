@@ -20,26 +20,26 @@ export function EarningsBreakdownTooltip({
   colorByAppId,
 }: EarningsBreakdownTooltipProps) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-white p-3 text-xs shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-50">{header}</p>
+    <div className="rounded-md border border-border bg-card p-3 text-xs shadow-md">
+      <p className="mb-2 font-medium text-foreground">{header}</p>
       <div className="flex flex-col gap-1">
         {byApp.map((app) => (
           <div key={app.appId} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
               <span
                 className="h-2 w-2 rounded-full"
                 style={{ backgroundColor: colorByAppId.get(app.appId) }}
               />
               {app.appName}
             </span>
-            <span className="tabular-nums text-zinc-700 dark:text-zinc-300">
+            <span className="tabular-nums text-secondary-foreground">
               {formatCurrency(app.earnings)} · {formatNumber(app.hours)}h ·{" "}
               {formatCurrency(app.dollarsPerHour)}/hr
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-2 flex items-center justify-between gap-4 border-t border-zinc-200 pt-2 font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
+      <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-2 font-medium text-foreground">
         <span>Total</span>
         <span className="tabular-nums">
           {formatCurrency(totalEarnings)} · {formatNumber(totalHours)}h ·{" "}

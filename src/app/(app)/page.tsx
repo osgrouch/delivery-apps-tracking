@@ -38,8 +38,8 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           {totals.shiftCount} shift{totals.shiftCount === 1 ? "" : "s"} logged
         </p>
       </div>
@@ -54,26 +54,26 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-sm font-medium text-secondary-foreground">
             Earnings over time
           </h2>
           <EarningsOverTimeChart data={earningsByDate} />
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-sm font-medium text-secondary-foreground">
             Earnings by app
           </h2>
           <AppBreakdownChart data={earningsByApp} />
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <WeeklyEarningsChart apps={apps} initialWeekStart={weekStart} initialData={weeklyEarnings} />
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <MonthlyEarningsChart
           apps={apps}
           initialYear={currentYear}

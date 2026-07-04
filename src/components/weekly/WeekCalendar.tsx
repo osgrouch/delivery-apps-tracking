@@ -22,7 +22,6 @@ export function WeekCalendar({
   appsByDate,
   colorByAppId,
 }: WeekCalendarProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const selectedRowRef = useRef<HTMLButtonElement>(null);
 
   const monthGroups = useMemo(() => weekStarts.map(getWeekMonthGroup), [weekStarts]);
@@ -35,8 +34,8 @@ export function WeekCalendar({
   }, []);
 
   return (
-    <div ref={containerRef} className="h-full overflow-y-auto">
-      <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-zinc-200 bg-zinc-50 text-center text-[10px] font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="h-full overflow-y-auto">
+      <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-border bg-card text-center text-[10px] font-medium text-muted-foreground">
         {WEEKDAY_SHORT.map((label) => (
           <div key={label} className="py-1">
             {label}
@@ -55,7 +54,7 @@ export function WeekCalendar({
         return (
           <Fragment key={weekStart}>
             {isNewMonth ? (
-              <p className="px-3 pt-2 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              <p className="px-3 pt-2 pb-1 text-xs font-semibold text-muted-foreground">
                 {formatMonthYear(group.year, group.month)}
               </p>
             ) : null}
@@ -63,10 +62,8 @@ export function WeekCalendar({
               type="button"
               ref={isSelected ? selectedRowRef : undefined}
               onClick={() => onSelectWeek(weekStart)}
-              className={`grid w-full grid-cols-7 border-b border-zinc-100 py-1.5 text-center dark:border-zinc-900 ${
-                isSelected
-                  ? "bg-blue-500/15 ring-1 ring-blue-500/40 ring-inset dark:bg-blue-400/20"
-                  : "hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              className={`grid w-full grid-cols-7 border-b border-border py-1.5 text-center ${
+                isSelected ? "bg-primary/15 ring-1 ring-primary/40 ring-inset" : "hover:bg-secondary"
               }`}
             >
               {dates.map((date) => {
@@ -77,9 +74,7 @@ export function WeekCalendar({
                   <div key={date} className="flex flex-col items-center gap-0.5">
                     <span
                       className={
-                        isOutsideShownMonth
-                          ? "text-xs text-zinc-400 dark:text-zinc-600"
-                          : "text-xs text-zinc-900 dark:text-zinc-50"
+                        isOutsideShownMonth ? "text-xs text-muted-foreground/50" : "text-xs text-foreground"
                       }
                     >
                       {Number(date.slice(8, 10))}

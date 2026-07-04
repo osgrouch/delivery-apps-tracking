@@ -39,6 +39,13 @@ export function formatNumber(value: number, fractionDigits = 1): string {
   return value.toFixed(fractionDigits);
 }
 
+/** e.g. 2.5 -> "2h 30m", 4 -> "4h" (whole hours omit the minutes part). */
+export function formatDuration(hours: number): string {
+  const wholeHours = Math.floor(hours);
+  const minutes = Math.round((hours - wholeHours) * 60);
+  return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`;
+}
+
 /** e.g. "June 2026", for a calendar's month section titles. */
 export function formatMonthYear(year: number, month: number): string {
   return monthYearFormatter.format(new Date(Date.UTC(year, month - 1, 1)));

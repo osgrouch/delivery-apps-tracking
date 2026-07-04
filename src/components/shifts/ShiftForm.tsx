@@ -20,7 +20,7 @@ interface ShiftFormProps {
 const initialState: ShiftActionResult = {};
 
 const inputClasses =
-  "rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900";
+  "rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
 
 function Field({
   label,
@@ -35,12 +35,12 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <label htmlFor={htmlFor} className="text-sm font-medium text-secondary-foreground">
         {label}
       </label>
       {children}
       {errors?.length ? (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {errors[0]}
         </p>
       ) : null}
@@ -161,7 +161,7 @@ export function ShiftForm({ apps, action, defaultValues, submitLabel = "Save shi
       </div>
 
       {state.error ? (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {state.error}
         </p>
       ) : null}
@@ -169,7 +169,7 @@ export function ShiftForm({ apps, action, defaultValues, submitLabel = "Save shi
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+        className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {pending ? "Saving…" : submitLabel}
       </button>

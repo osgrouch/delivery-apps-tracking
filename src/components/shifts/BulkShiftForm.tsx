@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import type { App } from "@/types/database.types";
 
 const textareaClasses =
-  "min-h-[16rem] w-full rounded-md border border-zinc-300 px-3 py-2 font-mono text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900";
+  "min-h-[16rem] w-full rounded-md border border-border bg-input px-3 py-2 font-mono text-sm text-foreground outline-none focus:border-primary";
 
 export function BulkShiftForm({ apps }: { apps: App[] }) {
   const [text, setText] = useState("");
@@ -49,7 +49,7 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
           type="button"
           onClick={handleParse}
           disabled={text.trim().length === 0}
-          className="self-start rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+          className="self-start rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           Parse shifts
         </button>
@@ -62,11 +62,9 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       {hasIssues ? (
-        <div className="rounded-md border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-          <p className="mb-2 text-sm font-medium text-red-800 dark:text-red-200">
-            Fix these issues and re-parse:
-          </p>
-          <ul className="list-inside list-disc text-sm text-red-700 dark:text-red-300">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4">
+          <p className="mb-2 text-sm font-medium text-destructive">Fix these issues and re-parse:</p>
+          <ul className="list-inside list-disc text-sm text-destructive">
             {result.issues.map((issue, idx) => (
               <li key={idx}>
                 Line {issue.lineNumber}: {issue.message}
@@ -77,9 +75,9 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
       ) : null}
 
       {result.shifts.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full min-w-max text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+            <thead className="border-b border-border bg-secondary/40 text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">Date</th>
                 <th className="px-4 py-2 font-medium">App</th>
@@ -90,7 +88,7 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
                 <th className="px-4 py-2 text-right font-medium">Hours</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <tbody className="divide-y divide-border">
               {result.shifts.map((shift, idx) => (
                 <tr key={idx}>
                   <td className="whitespace-nowrap px-4 py-2">{formatDate(shift.date)}</td>
@@ -108,11 +106,11 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
           </table>
         </div>
       ) : (
-        <p className="text-sm text-zinc-500">No shifts were recognized in the pasted text.</p>
+        <p className="text-sm text-muted-foreground">No shifts were recognized in the pasted text.</p>
       )}
 
       {error ? (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
@@ -121,7 +119,7 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
         <button
           type="button"
           onClick={handleBack}
-          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary"
         >
           Back to edit
         </button>
@@ -129,7 +127,7 @@ export function BulkShiftForm({ apps }: { apps: App[] }) {
           type="button"
           onClick={handleConfirm}
           disabled={hasIssues || result.shifts.length === 0 || isPending}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {isPending ? "Saving…" : `Confirm & save ${result.shifts.length} shift${result.shifts.length === 1 ? "" : "s"}`}
         </button>
