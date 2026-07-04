@@ -13,6 +13,7 @@ interface WeekCalendarProps {
   onSelectWeek: (weekStart: string) => void;
   appsByDate: Record<string, DateApp[]>;
   colorByAppId: Map<number, string>;
+  today: string;
 }
 
 export function WeekCalendar({
@@ -21,6 +22,7 @@ export function WeekCalendar({
   onSelectWeek,
   appsByDate,
   colorByAppId,
+  today,
 }: WeekCalendarProps) {
   const selectedRowRef = useRef<HTMLButtonElement>(null);
 
@@ -54,7 +56,7 @@ export function WeekCalendar({
         return (
           <Fragment key={weekStart}>
             {isNewMonth ? (
-              <p className="px-3 pt-2 pb-1 text-xs font-semibold text-muted-foreground">
+              <p className="flex h-7 items-center justify-center border-b border-border bg-card text-center text-xs font-semibold text-muted-foreground">
                 {formatMonthYear(group.year, group.month)}
               </p>
             ) : null}
@@ -62,32 +64,46 @@ export function WeekCalendar({
               type="button"
               ref={isSelected ? selectedRowRef : undefined}
               onClick={() => onSelectWeek(weekStart)}
-              className={`grid w-full grid-cols-7 border-b border-border py-1.5 text-center ${
-                isSelected ? "bg-primary/15 ring-1 ring-primary/40 ring-inset" : "hover:bg-secondary"
+              className={`grid w-full grid-cols-7 border-b border-border text-center ${
+                isSelected ? "bg-[#8b5cf6]/15 ring-1 ring-[#8b5cf6]/40 ring-inset" : "hover:bg-secondary"
               }`}
             >
               {dates.map((date) => {
                 const isOutsideShownMonth =
                   Number(date.slice(0, 4)) !== group.year || Number(date.slice(5, 7)) !== group.month;
+                const isToday = date === today;
+
+                const dots = appsByDate[date] ?? [];
 
                 return (
-                  <div key={date} className="flex flex-col items-center gap-0.5">
+                  <div
+                    key={date}
+                    className={`flex min-h-10 flex-col items-center justify-center gap-0.5 ${
+                      isToday ? "bg-primary text-primary-foreground" : ""
+                    }`}
+                  >
                     <span
-                      className={
-                        isOutsideShownMonth ? "text-xs text-muted-foreground/50" : "text-xs text-foreground"
-                      }
+                      className={`text-xs ${
+                        isToday
+                          ? "font-semibold"
+                          : isOutsideShownMonth
+                            ? "text-muted-foreground/50"
+                            : "text-foreground"
+                      }`}
                     >
                       {Number(date.slice(8, 10))}
                     </span>
-                    <div className="flex h-2 items-center gap-0.5">
-                      {(appsByDate[date] ?? []).map((app) => (
-                        <span
-                          key={app.appId}
-                          className="h-1.5 w-1.5 rounded-full border border-black"
-                          style={{ backgroundColor: colorByAppId.get(app.appId) }}
-                        />
-                      ))}
-                    </div>
+                    {dots.length > 0 ? (
+                      <div className="flex items-center gap-0.5">
+                        {dots.map((app) => (
+                          <span
+                            key={app.appId}
+                            className="h-1.5 w-1.5 rounded-full border border-black"
+                            style={{ backgroundColor: colorByAppId.get(app.appId) }}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}

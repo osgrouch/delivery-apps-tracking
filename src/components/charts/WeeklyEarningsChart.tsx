@@ -36,7 +36,7 @@ export function WeeklyEarningsChart({ apps, initialWeekStart, initialData }: Wee
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-secondary-foreground">Weekly earnings by app</h2>
+        <h2 className="text-sm font-medium text-secondary-foreground">Weekly Earnings by App</h2>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <NavArrowButton
             direction="prev"

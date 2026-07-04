@@ -33,6 +33,7 @@ interface WeeklyFocusViewProps {
   weekStarts: string[];
   initialWeekStart: string;
   appsByDate: Record<string, DateApp[]>;
+  today: string;
 }
 
 export function WeeklyFocusView({
@@ -41,6 +42,7 @@ export function WeeklyFocusView({
   weekStarts,
   initialWeekStart,
   appsByDate,
+  today,
 }: WeeklyFocusViewProps) {
   const [selectedWeekStart, setSelectedWeekStart] = useState(initialWeekStart);
   const [isChangingWeek, setIsChangingWeek] = useState(false);
@@ -92,13 +94,11 @@ export function WeeklyFocusView({
   );
 
   return (
-    <div className="grid h-full w-full grid-cols-[35%_65%] overflow-hidden">
+    <div className="grid h-full w-full grid-cols-[30%_70%] overflow-hidden">
       <div className="grid min-h-0 grid-rows-[45%_55%] border-r border-border">
         <div className="flex min-h-0 flex-col gap-2 overflow-hidden border-b border-border p-4">
-          <div>
-            <h2 className="text-sm font-medium text-secondary-foreground">
-              Weekly earnings by app
-            </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-secondary-foreground">Weekly Earnings by App</h2>
             <p className="font-mono text-xs text-muted-foreground">
               {formatShortDate(selectedWeekStart)}–{formatShortDate(addDaysISO(selectedWeekStart, 6))}
             </p>
@@ -120,6 +120,7 @@ export function WeeklyFocusView({
             onSelectWeek={handleSelectWeek}
             appsByDate={appsByDate}
             colorByAppId={colorByAppId}
+            today={today}
           />
         </div>
       </div>

@@ -30,6 +30,7 @@ export default async function WeeklyFocusPage() {
       weekStarts={weekStarts}
       initialWeekStart={currentWeekStart}
       appsByDate={appsByDate}
+      today={today}
     />
   );
 }

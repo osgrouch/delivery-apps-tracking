@@ -18,7 +18,7 @@ export function DayRow({ label, date, shifts, colorByAppId }: DayRowProps) {
         <span className="text-sm font-medium text-foreground">{label}</span>
         <span className="font-mono text-xs text-muted-foreground">{formatShortDate(date)}</span>
         {shifts.length > 0 ? (
-          <span className="mt-1 font-mono text-xs font-medium text-primary">
+          <span className="mt-1 font-mono text-xs font-medium text-green-500">
             {formatCurrency(dayTotal)}
           </span>
         ) : null}
