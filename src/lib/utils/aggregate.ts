@@ -289,3 +289,110 @@ export function getYearRange(shifts: readonly Pick<ShiftWithApp, "date">[]): {
 
   return { minYear, maxYear };
 }
+
+/** The earliest shift date (ISO), or null if there are none. */
+export function getEarliestShiftDate(shifts: readonly Pick<ShiftWithApp, "date">[]): string | null {
+  if (shifts.length === 0) return null;
+  return shifts.reduce((earliest, shift) => (shift.date < earliest ? shift.date : earliest), shifts[0].date);
+}
+
+/** Every Monday (ISO), inclusive, from the week containing fromISO through the week containing toISO. */
+export function getWeekStartsBetween(fromISO: string, toISO: string): string[] {
+  const start = getMondayOfWeek(fromISO);
+  const end = getMondayOfWeek(toISO);
+
+  const weekStarts: string[] = [];
+  for (let weekStart = start; weekStart <= end; weekStart = addDaysISO(weekStart, 7)) {
+    weekStarts.push(weekStart);
+  }
+  return weekStarts;
+}
+
+/** Monday (ISO) of the week containing the last day of dateISO's calendar month. */
+export function getMonthEndWeekStart(dateISO: string): string {
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  const lastDayOfMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+  return getMondayOfWeek(lastDayOfMonth.toISOString().slice(0, 10));
+}
+
+export interface WeekMonthGroup {
+  year: number;
+  month: number;
+}
+
+/**
+ * The calendar month a Monday-Sunday week "belongs to" for grouping in the
+ * calendar widget, by majority rule: whichever month has 4+ of the week's 7
+ * days. Only the ~1 week per month that straddles a month boundary is
+ * actually ambiguous — a week starting Mon/Tue/Wed/Thu belongs to the new
+ * month (4-7 of its days fall there); a week starting Fri/Sat/Sun belongs
+ * to the previous month (4-6 of its days are still in it).
+ */
+export function getWeekMonthGroup(weekStartISO: string): WeekMonthGroup {
+  const counts = new Map<string, number>();
+  for (let i = 0; i < 7; i++) {
+    const key = addDaysISO(weekStartISO, i).slice(0, 7);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  let bestKey = "";
+  let bestCount = 0;
+  for (const [key, count] of counts) {
+    if (count > bestCount) {
+      bestKey = key;
+      bestCount = count;
+    }
+  }
+
+  const [year, month] = bestKey.split("-").map(Number);
+  return { year, month };
+}
+
+export interface DateApp {
+  appId: number;
+  appName: string;
+}
+
+/** Maps each date to the distinct apps worked that day, sorted by app name. */
+export function getDistinctAppsByDate(shifts: readonly AppDatedShift[]): Record<string, DateApp[]> {
+  const byDate = new Map<string, Map<number, DateApp>>();
+
+  for (const shift of shifts) {
+    const appsForDate = byDate.get(shift.date) ?? new Map<number, DateApp>();
+    appsForDate.set(shift.app.id, { appId: shift.app.id, appName: shift.app.name });
+    byDate.set(shift.date, appsForDate);
+  }
+
+  const result: Record<string, DateApp[]> = {};
+  for (const [date, appsForDate] of byDate) {
+    result[date] = [...appsForDate.values()].sort((a, b) => a.appName.localeCompare(b.appName));
+  }
+  return result;
+}
+
+/**
+ * Buckets shifts into 7 arrays (Monday-Sunday) for the week starting at
+ * weekStartISO, each sorted by start time. Shifts outside that week are
+ * dropped.
+ */
+export function groupShiftsByWeekday<T extends Pick<ShiftWithApp, "date" | "start_time">>(
+  shifts: readonly T[],
+  weekStartISO: string,
+): T[][] {
+  const weekEndISO = addDaysISO(weekStartISO, 6);
+  const buckets: T[][] = Array.from({ length: 7 }, () => []);
+
+  for (const shift of shifts) {
+    if (shift.date < weekStartISO || shift.date > weekEndISO) continue;
+    const dayIndex = Math.round(
+      (Date.parse(`${shift.date}T00:00:00Z`) - Date.parse(`${weekStartISO}T00:00:00Z`)) / 86_400_000,
+    );
+    if (dayIndex >= 0 && dayIndex < 7) buckets[dayIndex].push(shift);
+  }
+
+  for (const bucket of buckets) {
+    bucket.sort((a, b) => a.start_time.localeCompare(b.start_time));
+  }
+
+  return buckets;
+}

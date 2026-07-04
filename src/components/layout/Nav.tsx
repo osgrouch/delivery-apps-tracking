@@ -24,6 +24,12 @@ export function Nav() {
           >
             Shifts
           </Link>
+          <Link
+            href="/weekly"
+            className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+          >
+            Weekly
+          </Link>
           <form action={signOut}>
             <button
               type="submit"

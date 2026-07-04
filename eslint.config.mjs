@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference-only Figma design export, not part of this Next.js app.
+    "figma-weekly-page-design/**",
   ]),
 ]);
 

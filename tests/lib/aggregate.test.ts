@@ -8,8 +8,14 @@ import {
   aggregateYearByApp,
   computeTotals,
   deriveShiftMetrics,
+  getDistinctAppsByDate,
+  getEarliestShiftDate,
   getMondayOfWeek,
+  getMonthEndWeekStart,
+  getWeekMonthGroup,
+  getWeekStartsBetween,
   getYearRange,
+  groupShiftsByWeekday,
 } from "@/lib/utils/aggregate";
 
 describe("deriveShiftMetrics", () => {
@@ -256,5 +262,134 @@ describe("getYearRange", () => {
     const result = getYearRange([{ date: "2026-01-01" }, { date: "2026-12-31" }]);
 
     expect(result).toEqual({ minYear: 2026, maxYear: 2026 });
+  });
+});
+
+describe("getEarliestShiftDate", () => {
+  it("returns null for no shifts", () => {
+    expect(getEarliestShiftDate([])).toBeNull();
+  });
+
+  it("returns the earliest date regardless of input order", () => {
+    const result = getEarliestShiftDate([{ date: "2026-03-01" }, { date: "2025-06-15" }, { date: "2026-01-01" }]);
+
+    expect(result).toBe("2025-06-15");
+  });
+});
+
+describe("getWeekStartsBetween", () => {
+  it("returns a single Monday when from and to are in the same week", () => {
+    expect(getWeekStartsBetween("2026-06-30", "2026-07-02")).toEqual(["2026-06-29"]);
+  });
+
+  it("returns every Monday spanning multiple weeks, inclusive", () => {
+    expect(getWeekStartsBetween("2026-06-29", "2026-07-13")).toEqual([
+      "2026-06-29",
+      "2026-07-06",
+      "2026-07-13",
+    ]);
+  });
+
+  it("normalizes non-Monday endpoints to their containing week", () => {
+    expect(getWeekStartsBetween("2026-07-02", "2026-07-05")).toEqual(["2026-06-29"]);
+  });
+});
+
+describe("getMonthEndWeekStart", () => {
+  it("returns the Monday of the week containing the month's last day", () => {
+    expect(getMonthEndWeekStart("2026-06-15")).toBe("2026-06-29");
+  });
+
+  it("works when the last day falls near the end of its own week", () => {
+    expect(getMonthEndWeekStart("2026-07-10")).toBe("2026-07-27");
+  });
+
+  it("works for a short month (February, non-leap year)", () => {
+    expect(getMonthEndWeekStart("2026-02-10")).toBe("2026-02-23");
+  });
+});
+
+describe("getDistinctAppsByDate", () => {
+  it("dedupes multiple shifts for the same app on the same date", () => {
+    const result = getDistinctAppsByDate([
+      { date: "2026-06-01", earnings: 10, hours: 1, app: { id: 1, name: "Doordash" } },
+      { date: "2026-06-01", earnings: 20, hours: 2, app: { id: 1, name: "Doordash" } },
+    ]);
+
+    expect(result).toEqual({ "2026-06-01": [{ appId: 1, appName: "Doordash" }] });
+  });
+
+  it("lists multiple distinct apps on the same date, sorted by name", () => {
+    const result = getDistinctAppsByDate([
+      { date: "2026-06-01", earnings: 10, hours: 1, app: { id: 2, name: "Uber Eats" } },
+      { date: "2026-06-01", earnings: 20, hours: 2, app: { id: 1, name: "Doordash" } },
+    ]);
+
+    expect(result["2026-06-01"]).toEqual([
+      { appId: 1, appName: "Doordash" },
+      { appId: 2, appName: "Uber Eats" },
+    ]);
+  });
+});
+
+describe("groupShiftsByWeekday", () => {
+  it("buckets shifts into the correct day of a Monday-Sunday week", () => {
+    const shifts = [
+      { date: "2026-07-01", start_time: "09:00" },
+      { date: "2026-06-29", start_time: "08:00" },
+      { date: "2026-07-05", start_time: "10:00" },
+    ];
+
+    const result = groupShiftsByWeekday(shifts, "2026-06-29");
+
+    expect(result[0]).toEqual([{ date: "2026-06-29", start_time: "08:00" }]);
+    expect(result[2]).toEqual([{ date: "2026-07-01", start_time: "09:00" }]);
+    expect(result[6]).toEqual([{ date: "2026-07-05", start_time: "10:00" }]);
+    expect(result[1]).toEqual([]);
+  });
+
+  it("sorts multiple shifts on the same day by start time", () => {
+    const shifts = [
+      { date: "2026-06-29", start_time: "17:00" },
+      { date: "2026-06-29", start_time: "09:00" },
+    ];
+
+    const result = groupShiftsByWeekday(shifts, "2026-06-29");
+
+    expect(result[0].map((s) => s.start_time)).toEqual(["09:00", "17:00"]);
+  });
+
+  it("drops shifts outside the requested week", () => {
+    const shifts = [{ date: "2026-07-10", start_time: "09:00" }];
+
+    const result = groupShiftsByWeekday(shifts, "2026-06-29");
+
+    expect(result.every((bucket) => bucket.length === 0)).toBe(true);
+  });
+});
+
+describe("getWeekMonthGroup", () => {
+  it("assigns a week fully inside one month to that month", () => {
+    expect(getWeekMonthGroup("2026-06-01")).toEqual({ year: 2026, month: 6 });
+  });
+
+  it("assigns a week starting Wednesday (new month has the majority) to the new month", () => {
+    // 2026-07-01 is a Wednesday: Mon-Tue (Jun 29-30) old, Wed-Sun (Jul 1-5) new, new wins 5-2.
+    expect(getWeekMonthGroup("2026-06-29")).toEqual({ year: 2026, month: 7 });
+  });
+
+  it("assigns a week starting Sunday (previous month has the majority) to the previous month", () => {
+    // 2026-02-01 is a Sunday: Mon-Sat (Jan 26-31) old, Sun (Feb 1) new, old wins 6-1.
+    expect(getWeekMonthGroup("2026-01-26")).toEqual({ year: 2026, month: 1 });
+  });
+
+  it("assigns a week starting Friday (previous month has the majority) to the previous month", () => {
+    // 2026-05-01 is a Friday: Mon-Thu (Apr 27-30) old, Fri-Sun (May 1-3) new, old wins 4-3.
+    expect(getWeekMonthGroup("2026-04-27")).toEqual({ year: 2026, month: 4 });
+  });
+
+  it("assigns a week starting Thursday (new month has a bare majority) to the new month, crossing a year boundary", () => {
+    // 2026-01-01 is a Thursday: Mon-Wed (Dec 29-31, 2025) old, Thu-Sun (Jan 1-4) new, new wins 4-3.
+    expect(getWeekMonthGroup("2025-12-29")).toEqual({ year: 2026, month: 1 });
   });
 });

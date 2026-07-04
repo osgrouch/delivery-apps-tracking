@@ -14,6 +14,12 @@ const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
+const monthYearFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
@@ -31,4 +37,9 @@ export function formatShortDate(isoDate: string): string {
 
 export function formatNumber(value: number, fractionDigits = 1): string {
   return value.toFixed(fractionDigits);
+}
+
+/** e.g. "June 2026", for a calendar's month section titles. */
+export function formatMonthYear(year: number, month: number): string {
+  return monthYearFormatter.format(new Date(Date.UTC(year, month - 1, 1)));
 }
