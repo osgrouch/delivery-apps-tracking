@@ -3,15 +3,17 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysISO,
   aggregateByApp,
-  aggregateByDate,
   aggregateWeekByApp,
   aggregateYearByApp,
+  aggregateWeeklyTotalsForYear,
+  computeHoursFromTimes,
   computeTotals,
   deriveShiftMetrics,
   getDistinctAppsByDate,
   getEarliestShiftDate,
   getMondayOfWeek,
   getMonthEndWeekStart,
+  getMonthWeekStarts,
   getWeekMonthGroup,
   getWeekStartsBetween,
   getYearRange,
@@ -67,25 +69,6 @@ describe("computeTotals", () => {
   });
 });
 
-describe("aggregateByDate", () => {
-  it("groups shifts on the same date and sums their metrics", () => {
-    const result = aggregateByDate([
-      { date: "2026-01-02", earnings: 50, hours: 2, mileage: 10, trips: 3 },
-      { date: "2026-01-01", earnings: 100, hours: 4, mileage: 20, trips: 5 },
-      { date: "2026-01-01", earnings: 25, hours: 1, mileage: 5, trips: 2 },
-    ]);
-
-    expect(result).toEqual([
-      { date: "2026-01-01", earnings: 125, hours: 5, mileage: 25, trips: 7 },
-      { date: "2026-01-02", earnings: 50, hours: 2, mileage: 10, trips: 3 },
-    ]);
-  });
-
-  it("returns an empty array for no shifts", () => {
-    expect(aggregateByDate([])).toEqual([]);
-  });
-});
-
 describe("aggregateByApp", () => {
   it("groups shifts by app name and sorts descending by earnings", () => {
     const result = aggregateByApp([
@@ -122,6 +105,16 @@ describe("addDaysISO", () => {
 
   it("subtracts days when given a negative count", () => {
     expect(addDaysISO("2026-06-29", -7)).toBe("2026-06-22");
+  });
+});
+
+describe("computeHoursFromTimes", () => {
+  it("computes whole hours", () => {
+    expect(computeHoursFromTimes("09:00", "17:00")).toBe(8);
+  });
+
+  it("computes fractional hours", () => {
+    expect(computeHoursFromTimes("09:15", "17:45")).toBeCloseTo(8.5);
   });
 });
 
@@ -265,6 +258,33 @@ describe("getYearRange", () => {
   });
 });
 
+describe("aggregateWeeklyTotalsForYear", () => {
+  it("zero-fills every week of the year, including boundary weeks that spill into adjacent years", () => {
+    const result = aggregateWeeklyTotalsForYear([], 2026);
+
+    expect(result).toHaveLength(53);
+    expect(result[0].weekStart).toBe("2025-12-29");
+    expect(result.at(-1)!.weekStart).toBe("2026-12-28");
+    expect(result.every((week) => week.totalEarnings === 0)).toBe(true);
+  });
+
+  it("sums earnings into the correct week and ignores shifts outside the year's span", () => {
+    const result = aggregateWeeklyTotalsForYear(
+      [
+        { date: "2026-07-06", earnings: 100, hours: 4, mileage: 20, trips: 5 },
+        { date: "2026-07-08", earnings: 50, hours: 2, mileage: 10, trips: 3 },
+        { date: "2024-01-01", earnings: 999, hours: 1, mileage: 1, trips: 1 },
+      ],
+      2026,
+    );
+
+    const targetWeek = result.find((week) => week.weekStart === "2026-07-06");
+    expect(targetWeek?.totalEarnings).toBe(150);
+    expect(targetWeek?.totalHours).toBe(6);
+    expect(result.reduce((sum, week) => sum + week.totalEarnings, 0)).toBe(150);
+  });
+});
+
 describe("getEarliestShiftDate", () => {
   it("returns null for no shifts", () => {
     expect(getEarliestShiftDate([])).toBeNull();
@@ -306,6 +326,38 @@ describe("getMonthEndWeekStart", () => {
 
   it("works for a short month (February, non-leap year)", () => {
     expect(getMonthEndWeekStart("2026-02-10")).toBe("2026-02-23");
+  });
+});
+
+describe("getMonthWeekStarts", () => {
+  it("starts on the 1st's own Monday when the 1st is a Monday", () => {
+    expect(getMonthWeekStarts(2026, 6)).toEqual([
+      "2026-06-01",
+      "2026-06-08",
+      "2026-06-15",
+      "2026-06-22",
+      "2026-06-29",
+    ]);
+  });
+
+  it("includes the prior month's spillover week when the 1st isn't a Monday", () => {
+    expect(getMonthWeekStarts(2026, 7)).toEqual([
+      "2026-06-29",
+      "2026-07-06",
+      "2026-07-13",
+      "2026-07-20",
+      "2026-07-27",
+    ]);
+  });
+
+  it("shows the full week even when the 1st falls on a Sunday", () => {
+    expect(getMonthWeekStarts(2026, 2)).toEqual([
+      "2026-01-26",
+      "2026-02-02",
+      "2026-02-09",
+      "2026-02-16",
+      "2026-02-23",
+    ]);
   });
 });
 

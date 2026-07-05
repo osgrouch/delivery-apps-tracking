@@ -40,18 +40,3 @@ export async function getShifts(filters: ShiftFilters = {}): Promise<ShiftWithAp
 
   return data as unknown as ShiftWithApp[];
 }
-
-export async function getShiftById(id: string): Promise<ShiftWithApp | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("shifts")
-    .select("*, app:apps(id, name)")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load shift ${id}: ${error.message}`);
-  }
-
-  return data as unknown as ShiftWithApp | null;
-}

@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,7 +15,12 @@ import type { EarningsByApp } from "@/lib/utils/aggregate";
 import { CHART_GRID_STROKE, CHART_PRIMARY_COLOR, CHART_TICK_STYLE, CHART_TOOLTIP_STYLE } from "@/lib/utils/chartTheme";
 import { formatCurrency } from "@/lib/utils/format";
 
-export function AppBreakdownChart({ data }: { data: EarningsByApp[] }) {
+interface AppBreakdownChartProps {
+  data: EarningsByApp[];
+  colorByAppName: Map<string, string>;
+}
+
+export function AppBreakdownChart({ data, colorByAppName }: AppBreakdownChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
@@ -33,7 +39,11 @@ export function AppBreakdownChart({ data }: { data: EarningsByApp[] }) {
           formatter={(value) => [formatCurrency(Number(value)), "Earnings"]}
           contentStyle={CHART_TOOLTIP_STYLE}
         />
-        <Bar dataKey="earnings" fill={CHART_PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="earnings" radius={[4, 4, 0, 0]}>
+          {data.map((entry) => (
+            <Cell key={entry.appName} fill={colorByAppName.get(entry.appName) ?? CHART_PRIMARY_COLOR} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

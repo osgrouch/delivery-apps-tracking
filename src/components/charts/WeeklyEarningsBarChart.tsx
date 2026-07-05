@@ -15,7 +15,6 @@ import type { TooltipContentProps, XAxisTickContentProps } from "recharts";
 
 import { EarningsBreakdownTooltip } from "@/components/charts/EarningsBreakdownTooltip";
 import type { WeeklyDayEarnings } from "@/lib/utils/aggregate";
-import { colorForApp } from "@/lib/utils/appColors";
 import {
   CHART_CURSOR_FILL,
   CHART_GRID_STROKE,
@@ -67,10 +66,7 @@ interface WeeklyEarningsBarChartProps {
 
 /** Pure presentational stacked bar chart, shared by the dashboard's weekly card and the /weekly focus page. */
 export function WeeklyEarningsBarChart({ apps, days, height = 320 }: WeeklyEarningsBarChartProps) {
-  const colorByAppId = useMemo(
-    () => new Map(apps.map((app, index) => [app.id, colorForApp(app.name, index)])),
-    [apps],
-  );
+  const colorByAppId = useMemo(() => new Map(apps.map((app) => [app.id, app.color])), [apps]);
 
   return (
     <ResponsiveContainer width="100%" height={height}>

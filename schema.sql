@@ -3,11 +3,15 @@
 
 create extension if not exists "pgcrypto";
 
--- Delivery platforms (Uber Eats, Doordash, InstaCart, ...)
+-- Delivery platforms (Uber Eats, DoorDash, InstaCart, ...)
 create table if not exists apps (
-    id   integer generated always as identity primary key,
-    name text not null unique
+    id    integer generated always as identity primary key,
+    name  text not null unique,
+    color text not null default '#64748b'
 );
+
+-- Backfill for a database created before `color` existed.
+alter table apps add column if not exists color text not null default '#64748b';
 
 -- Individual delivery shifts
 create table if not exists shifts (
@@ -60,5 +64,10 @@ alter default privileges in schema public
 
 -- Seed the known delivery platforms
 insert into apps (name)
-values ('Uber Eats'), ('Doordash'), ('InstaCart')
+values ('Uber Eats'), ('DoorDash'), ('InstaCart')
 on conflict (name) do nothing;
+
+-- Brand colors (also fixes up rows seeded before `color` existed).
+update apps set color = '#286ef0' where name = 'Uber Eats';
+update apps set color = '#f72e09' where name = 'DoorDash';
+update apps set color = '#09af07' where name = 'InstaCart';

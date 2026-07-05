@@ -19,14 +19,17 @@ export interface Database {
         Row: {
           id: number;
           name: string;
+          color: string;
         };
         Insert: {
           id?: number;
           name: string;
+          color?: string;
         };
         Update: {
           id?: number;
           name?: string;
+          color?: string;
         };
         Relationships: [];
       };

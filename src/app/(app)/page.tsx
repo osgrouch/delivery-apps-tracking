@@ -6,7 +6,7 @@ import { KpiCard } from "@/components/ui/KpiCard";
 import { getApps, getShifts } from "@/lib/queries/shifts";
 import {
   aggregateByApp,
-  aggregateByDate,
+  aggregateWeeklyTotalsForYear,
   aggregateWeekByApp,
   aggregateYearByApp,
   computeTotals,
@@ -23,8 +23,8 @@ function todayISODate(): string {
 export default async function DashboardPage() {
   const [shifts, apps] = await Promise.all([getShifts(), getApps()]);
   const totals = computeTotals(shifts);
-  const earningsByDate = aggregateByDate(shifts);
   const earningsByApp = aggregateByApp(shifts);
+  const colorByAppName = new Map(apps.map((app) => [app.name, app.color]));
 
   const today = todayISODate();
   const currentYear = Number(today.slice(0, 4));
@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   const weeklyEarnings = aggregateWeekByApp(shifts, apps, weekStart);
 
   const monthlyEarnings = aggregateYearByApp(shifts, apps, currentYear);
+  const earningsOverTime = aggregateWeeklyTotalsForYear(shifts, currentYear);
   const yearRange = getYearRange(shifts) ?? { minYear: currentYear, maxYear: currentYear };
 
   return (
@@ -55,17 +56,19 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-secondary-foreground">
-            Earnings over time
-          </h2>
-          <EarningsOverTimeChart data={earningsByDate} />
+          <EarningsOverTimeChart
+            initialYear={currentYear}
+            initialData={earningsOverTime}
+            minYear={yearRange.minYear}
+            maxYear={yearRange.maxYear}
+          />
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <h2 className="text-sm font-medium text-secondary-foreground">
             Earnings by app
           </h2>
-          <AppBreakdownChart data={earningsByApp} />
+          <AppBreakdownChart data={earningsByApp} colorByAppName={colorByAppName} />
         </div>
       </div>
 

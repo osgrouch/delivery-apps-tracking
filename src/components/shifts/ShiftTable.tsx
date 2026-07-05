@@ -1,11 +1,10 @@
-import Link from "next/link";
-
 import { DeleteShiftButton } from "@/components/shifts/DeleteShiftButton";
+import { EditShiftModal } from "@/components/shifts/EditShiftModal";
 import { deriveShiftMetrics } from "@/lib/utils/aggregate";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import type { ShiftWithApp } from "@/types/database.types";
+import type { App, ShiftWithApp } from "@/types/database.types";
 
-export function ShiftTable({ shifts }: { shifts: ShiftWithApp[] }) {
+export function ShiftTable({ shifts, apps }: { shifts: ShiftWithApp[]; apps: App[] }) {
   if (shifts.length === 0) {
     return <p className="text-sm text-muted-foreground">No shifts yet. Add your first one above.</p>;
   }
@@ -41,12 +40,7 @@ export function ShiftTable({ shifts }: { shifts: ShiftWithApp[] }) {
                 <td className="px-4 py-2 text-right">{shift.trips}</td>
                 <td className="px-4 py-2 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/shifts/${shift.id}/edit`}
-                      className="text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      Edit
-                    </Link>
+                    <EditShiftModal shift={shift} apps={apps} variant="text" />
                     <DeleteShiftButton id={shift.id} />
                   </div>
                 </td>

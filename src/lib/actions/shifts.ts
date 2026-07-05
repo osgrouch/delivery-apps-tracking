@@ -1,15 +1,17 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { computeHoursFromTimes } from "@/lib/utils/aggregate";
 import { shiftFieldsSchema, shiftFormSchema } from "@/lib/validation/shift";
 import type { ParsedShift } from "@/lib/parsing/bulkShifts";
 
 export interface ShiftActionResult {
   error?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+  success?: boolean;
 }
 
 function parseShiftForm(formData: FormData) {
@@ -21,7 +23,6 @@ function parseShiftForm(formData: FormData) {
     earnings: formData.get("earnings"),
     mileage: formData.get("mileage"),
     trips: formData.get("trips"),
-    hours: formData.get("hours"),
   });
 }
 
@@ -44,7 +45,7 @@ export async function createShift(
     earnings: parsed.data.earnings,
     mileage: parsed.data.mileage,
     trips: parsed.data.trips,
-    hours: parsed.data.hours,
+    hours: computeHoursFromTimes(parsed.data.startTime, parsed.data.endTime),
   });
 
   if (error) {
@@ -99,7 +100,7 @@ export async function bulkCreateShifts(shifts: ParsedShift[]): Promise<BulkCreat
   redirect("/shifts");
 }
 
-export async function updateShift(
+export async function updateShiftInPlace(
   id: string,
   _prevState: ShiftActionResult,
   formData: FormData,
@@ -121,7 +122,7 @@ export async function updateShift(
       earnings: parsed.data.earnings,
       mileage: parsed.data.mileage,
       trips: parsed.data.trips,
-      hours: parsed.data.hours,
+      hours: computeHoursFromTimes(parsed.data.startTime, parsed.data.endTime),
     })
     .eq("id", id);
 
@@ -131,7 +132,9 @@ export async function updateShift(
 
   revalidatePath("/");
   revalidatePath("/shifts");
-  redirect("/shifts");
+  revalidatePath("/weekly");
+  refresh();
+  return { success: true };
 }
 
 export async function deleteShift(id: string): Promise<void> {

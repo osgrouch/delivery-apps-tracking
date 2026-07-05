@@ -21,9 +21,11 @@ export const shiftFieldsSchema = z.object({
 
 /**
  * Validates a single delivery shift as entered through the manual form.
+ * Hours isn't user-entered here — it's derived from start/end time (see
+ * computeHoursFromTimes) — so it's omitted from this schema entirely.
  * Same-day shifts only — end time must be after start time.
  */
-export const shiftFormSchema = shiftFieldsSchema.refine(
+export const shiftFormSchema = shiftFieldsSchema.omit({ hours: true }).refine(
   (shift) => shift.endTime > shift.startTime,
   {
     message: "End time must be after start time",

@@ -10,7 +10,6 @@ const validShift = {
   earnings: "120.50",
   mileage: "45.2",
   trips: "12",
-  hours: "8",
 };
 
 describe("shiftFormSchema", () => {
@@ -25,7 +24,6 @@ describe("shiftFormSchema", () => {
       earnings: 120.5,
       mileage: 45.2,
       trips: 12,
-      hours: 8,
     });
   });
 
@@ -42,12 +40,6 @@ describe("shiftFormSchema", () => {
 
   it("rejects negative earnings", () => {
     const result = shiftFormSchema.safeParse({ ...validShift, earnings: "-5" });
-
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects zero hours", () => {
-    const result = shiftFormSchema.safeParse({ ...validShift, hours: "0" });
 
     expect(result.success).toBe(false);
   });

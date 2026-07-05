@@ -7,6 +7,7 @@ import {
   formatMonthYear,
   formatNumber,
   formatShortDate,
+  formatWeekRangeTitle,
 } from "@/lib/utils/format";
 
 describe("formatCurrency", () => {
@@ -38,6 +39,22 @@ describe("formatMonthYear", () => {
 
   it("does not shift to the previous month across a year boundary", () => {
     expect(formatMonthYear(2026, 1)).toBe("January 2026");
+  });
+});
+
+describe("formatWeekRangeTitle", () => {
+  it("formats a week within a single month", () => {
+    expect(formatWeekRangeTitle("2026-07-06", "2026-07-12")).toBe("Week of July 6-12, 2026");
+  });
+
+  it("shows both month names when the week spans a month boundary", () => {
+    expect(formatWeekRangeTitle("2026-07-27", "2026-08-02")).toBe("Week of July 27-August 2, 2026");
+  });
+
+  it("shows both years when the week spans a year boundary", () => {
+    expect(formatWeekRangeTitle("2026-12-28", "2027-01-03")).toBe(
+      "Week of December 28, 2026-January 3, 2027",
+    );
   });
 });
 

@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 import type { ShiftActionResult } from "@/lib/actions/shifts";
 import type { App, ShiftWithApp } from "@/types/database.types";
 
 type ShiftDefaults = Pick<
   ShiftWithApp,
-  "app_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips" | "hours"
+  "app_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips"
 >;
 
 interface ShiftFormProps {
@@ -15,6 +15,8 @@ interface ShiftFormProps {
   action: (prevState: ShiftActionResult, formData: FormData) => Promise<ShiftActionResult>;
   defaultValues?: ShiftDefaults;
   submitLabel?: string;
+  /** Called when the action resolves with `success: true` (used by actions that don't redirect, e.g. modal edits). */
+  onSuccess?: () => void;
 }
 
 const initialState: ShiftActionResult = {};
@@ -48,29 +50,100 @@ function Field({
   );
 }
 
-export function ShiftForm({ apps, action, defaultValues, submitLabel = "Save shift" }: ShiftFormProps) {
+interface ShiftFieldProps {
+  defaultValue?: number;
+  errors?: string[];
+}
+
+/** Field building blocks shared by ShiftForm and EditShiftForm, since each arranges them into a different layout. */
+export function AppSelectField({
+  apps,
+  defaultValue,
+  errors,
+}: ShiftFieldProps & { apps: App[] }) {
+  return (
+    <Field label="App" htmlFor="appId" errors={errors}>
+      <select id="appId" name="appId" required defaultValue={defaultValue ?? ""} className={inputClasses}>
+        <option value="" disabled>
+          Select an app
+        </option>
+        {apps.map((app) => (
+          <option key={app.id} value={app.id}>
+            {app.name}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+export function EarningsField({ defaultValue, errors }: ShiftFieldProps) {
+  return (
+    <Field label="Earnings ($)" htmlFor="earnings" errors={errors}>
+      <input
+        id="earnings"
+        name="earnings"
+        type="number"
+        step="0.01"
+        min="0"
+        required
+        defaultValue={defaultValue}
+        className={inputClasses}
+      />
+    </Field>
+  );
+}
+
+export function MileageField({ defaultValue, errors }: ShiftFieldProps) {
+  return (
+    <Field label="Mileage" htmlFor="mileage" errors={errors}>
+      <input
+        id="mileage"
+        name="mileage"
+        type="number"
+        step="0.1"
+        min="0"
+        required
+        defaultValue={defaultValue}
+        className={inputClasses}
+      />
+    </Field>
+  );
+}
+
+export function TripsField({ defaultValue, errors }: ShiftFieldProps) {
+  return (
+    <Field label="Trips" htmlFor="trips" errors={errors}>
+      <input
+        id="trips"
+        name="trips"
+        type="number"
+        step="1"
+        min="0"
+        required
+        defaultValue={defaultValue}
+        className={inputClasses}
+      />
+    </Field>
+  );
+}
+
+export function ShiftForm({
+  apps,
+  action,
+  defaultValues,
+  submitLabel = "Save shift",
+  onSuccess,
+}: ShiftFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  useEffect(() => {
+    if (state.success) onSuccess?.();
+  }, [state.success, onSuccess]);
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
-      <Field label="App" htmlFor="appId" errors={state.fieldErrors?.appId}>
-        <select
-          id="appId"
-          name="appId"
-          required
-          defaultValue={defaultValues?.app_id ?? ""}
-          className={inputClasses}
-        >
-          <option value="" disabled>
-            Select an app
-          </option>
-          {apps.map((app) => (
-            <option key={app.id} value={app.id}>
-              {app.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <AppSelectField apps={apps} defaultValue={defaultValues?.app_id} errors={state.fieldErrors?.appId} />
 
       <Field label="Date" htmlFor="date" errors={state.fieldErrors?.date}>
         <input
@@ -107,58 +180,11 @@ export function ShiftForm({ apps, action, defaultValues, submitLabel = "Save shi
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Earnings ($)" htmlFor="earnings" errors={state.fieldErrors?.earnings}>
-          <input
-            id="earnings"
-            name="earnings"
-            type="number"
-            step="0.01"
-            min="0"
-            required
-            defaultValue={defaultValues?.earnings}
-            className={inputClasses}
-          />
-        </Field>
-        <Field label="Mileage" htmlFor="mileage" errors={state.fieldErrors?.mileage}>
-          <input
-            id="mileage"
-            name="mileage"
-            type="number"
-            step="0.1"
-            min="0"
-            required
-            defaultValue={defaultValues?.mileage}
-            className={inputClasses}
-          />
-        </Field>
+        <EarningsField defaultValue={defaultValues?.earnings} errors={state.fieldErrors?.earnings} />
+        <MileageField defaultValue={defaultValues?.mileage} errors={state.fieldErrors?.mileage} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Trips" htmlFor="trips" errors={state.fieldErrors?.trips}>
-          <input
-            id="trips"
-            name="trips"
-            type="number"
-            step="1"
-            min="0"
-            required
-            defaultValue={defaultValues?.trips}
-            className={inputClasses}
-          />
-        </Field>
-        <Field label="Hours" htmlFor="hours" errors={state.fieldErrors?.hours}>
-          <input
-            id="hours"
-            name="hours"
-            type="number"
-            step="0.01"
-            min="0.01"
-            required
-            defaultValue={defaultValues?.hours}
-            className={inputClasses}
-          />
-        </Field>
-      </div>
+      <TripsField defaultValue={defaultValues?.trips} errors={state.fieldErrors?.trips} />
 
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">

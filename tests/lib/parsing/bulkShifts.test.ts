@@ -4,9 +4,9 @@ import { parseBulkShiftsText } from "@/lib/parsing/bulkShifts";
 import type { App } from "@/types/database.types";
 
 const apps: App[] = [
-  { id: 1, name: "Uber Eats" },
-  { id: 2, name: "Doordash" },
-  { id: 3, name: "InstaCart" },
+  { id: 1, name: "Uber Eats", color: "#286ef0" },
+  { id: 2, name: "Doordash", color: "#f72e09" },
+  { id: 3, name: "InstaCart", color: "#09af07" },
 ];
 
 const referenceDate = new Date("2026-06-30T00:00:00");

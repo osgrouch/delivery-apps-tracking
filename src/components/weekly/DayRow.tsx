@@ -1,15 +1,16 @@
 import { ShiftCard } from "@/components/weekly/ShiftCard";
 import { formatCurrency, formatShortDate } from "@/lib/utils/format";
-import type { ShiftWithApp } from "@/types/database.types";
+import type { App, ShiftWithApp } from "@/types/database.types";
 
 interface DayRowProps {
   label: string;
   date: string;
   shifts: ShiftWithApp[];
   colorByAppId: Map<number, string>;
+  apps: App[];
 }
 
-export function DayRow({ label, date, shifts, colorByAppId }: DayRowProps) {
+export function DayRow({ label, date, shifts, colorByAppId, apps }: DayRowProps) {
   const dayTotal = shifts.reduce((sum, shift) => sum + shift.earnings, 0);
 
   return (
@@ -32,6 +33,7 @@ export function DayRow({ label, date, shifts, colorByAppId }: DayRowProps) {
               key={shift.id}
               shift={shift}
               color={colorByAppId.get(shift.app.id) ?? "#71717a"}
+              apps={apps}
             />
           ))
         )}

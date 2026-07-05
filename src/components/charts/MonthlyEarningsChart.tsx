@@ -17,7 +17,6 @@ import { EarningsBreakdownTooltip } from "@/components/charts/EarningsBreakdownT
 import { NavArrowButton } from "@/components/ui/NavArrowButton";
 import { getMonthlyEarnings } from "@/lib/actions/dashboard";
 import type { MonthlyEarnings } from "@/lib/utils/aggregate";
-import { colorForApp } from "@/lib/utils/appColors";
 import {
   CHART_CURSOR_FILL,
   CHART_GRID_STROKE,
@@ -67,10 +66,7 @@ export function MonthlyEarningsChart({
   const [months, setMonths] = useState(initialData);
   const [isPending, startTransition] = useTransition();
 
-  const colorByAppId = useMemo(
-    () => new Map(apps.map((app, index) => [app.id, colorForApp(app.name, index)])),
-    [apps],
-  );
+  const colorByAppId = useMemo(() => new Map(apps.map((app) => [app.id, app.color])), [apps]);
 
   function changeYear(offset: number) {
     const nextYear = year + offset;

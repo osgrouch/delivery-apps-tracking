@@ -57,36 +57,6 @@ export function computeTotals(shifts: readonly EarningsShift[]): DashboardTotals
   };
 }
 
-export interface EarningsByDate {
-  date: string;
-  earnings: number;
-  hours: number;
-  mileage: number;
-  trips: number;
-}
-
-/** Groups shifts by calendar date and sums their metrics, sorted ascending by date. */
-export function aggregateByDate(shifts: readonly DatedEarningsShift[]): EarningsByDate[] {
-  const byDate = new Map<string, EarningsByDate>();
-
-  for (const shift of shifts) {
-    const existing = byDate.get(shift.date) ?? {
-      date: shift.date,
-      earnings: 0,
-      hours: 0,
-      mileage: 0,
-      trips: 0,
-    };
-    existing.earnings += shift.earnings;
-    existing.hours += shift.hours;
-    existing.mileage += shift.mileage;
-    existing.trips += shift.trips;
-    byDate.set(shift.date, existing);
-  }
-
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
-}
-
 export interface EarningsByApp {
   appName: string;
   earnings: number;
@@ -131,6 +101,13 @@ export function addDaysISO(dateISO: string, days: number): string {
   const date = new Date(`${dateISO}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+/** Hours between two same-day "HH:MM" times (end must be after start; see shiftFormSchema). */
+export function computeHoursFromTimes(startTime: string, endTime: string): number {
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  return (endHour * 60 + endMinute - (startHour * 60 + startMinute)) / 60;
 }
 
 export interface AppBreakdown {
@@ -308,11 +285,50 @@ export function getWeekStartsBetween(fromISO: string, toISO: string): string[] {
   return weekStarts;
 }
 
+export type WeeklyTotal = { weekStart: string } & DashboardTotals;
+
+/**
+ * Buckets shifts into Monday-Sunday weeks and runs computeTotals on each
+ * week, for every week touching the given calendar year (so a week
+ * straddling Dec 31/Jan 1 is fully counted once, under whichever year its
+ * Monday falls in). Every week in the span is always present — computeTotals
+ * already zero-fills an empty week — so a line chart gets a continuous
+ * full-year series.
+ */
+export function aggregateWeeklyTotalsForYear(
+  shifts: readonly DatedEarningsShift[],
+  year: number,
+): WeeklyTotal[] {
+  const weekStarts = getWeekStartsBetween(`${year}-01-01`, `${year}-12-31`);
+  const shiftsByWeek = new Map<string, DatedEarningsShift[]>(weekStarts.map((weekStart) => [weekStart, []]));
+
+  for (const shift of shifts) {
+    shiftsByWeek.get(getMondayOfWeek(shift.date))?.push(shift);
+  }
+
+  return weekStarts.map((weekStart) => ({
+    weekStart,
+    ...computeTotals(shiftsByWeek.get(weekStart) ?? []),
+  }));
+}
+
 /** Monday (ISO) of the week containing the last day of dateISO's calendar month. */
 export function getMonthEndWeekStart(dateISO: string): string {
   const date = new Date(`${dateISO}T00:00:00Z`);
   const lastDayOfMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
   return getMondayOfWeek(lastDayOfMonth.toISOString().slice(0, 10));
+}
+
+/**
+ * Every Monday (ISO), inclusive, spanning a full month-grid display for the
+ * given calendar month: the week containing the 1st through the week
+ * containing the last day, even when those weeks spill into neighboring
+ * months (e.g. the 1st falling on a Sunday still shows that whole week).
+ */
+export function getMonthWeekStarts(year: number, month: number): string[] {
+  const firstOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastOfMonth = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  return getWeekStartsBetween(firstOfMonth, lastOfMonth);
 }
 
 export interface WeekMonthGroup {
