@@ -87,6 +87,28 @@ export function aggregateByApp(shifts: readonly AppEarningsShift[]): EarningsByA
     .sort((a, b) => b.earnings - a.earnings);
 }
 
+export interface AppTotals extends DashboardTotals {
+  appId: number;
+  appName: string;
+}
+
+/** Runs computeTotals per app, so every app appears even with zero shifts. */
+export function aggregateTotalsByApp(
+  shifts: readonly (EarningsShift & { app: Pick<App, "id"> })[],
+  apps: readonly Pick<App, "id" | "name">[],
+): AppTotals[] {
+  const shiftsByApp = new Map<number, EarningsShift[]>(apps.map((app) => [app.id, []]));
+  for (const shift of shifts) {
+    shiftsByApp.get(shift.app.id)?.push(shift);
+  }
+
+  return apps.map((app) => ({
+    appId: app.id,
+    appName: app.name,
+    ...computeTotals(shiftsByApp.get(app.id) ?? []),
+  }));
+}
+
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /** Monday (ISO date) of the week containing the given date. All arithmetic is UTC-anchored to avoid local-timezone day shifts. */

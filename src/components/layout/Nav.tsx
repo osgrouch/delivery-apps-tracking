@@ -19,7 +19,7 @@ export function Nav() {
             Shifts
           </Link>
           <Link href="/weekly" className="text-muted-foreground hover:text-foreground">
-            Weekly
+            Weekly View
           </Link>
           <form action={signOut}>
             <button type="submit" className="text-muted-foreground hover:text-foreground">
