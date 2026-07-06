@@ -53,8 +53,8 @@ export async function createShift(
   }
 
   revalidatePath("/");
-  revalidatePath("/shifts");
-  redirect("/shifts");
+  revalidatePath("/all-time");
+  redirect("/all-time");
 }
 
 export interface BulkCreateShiftsResult {
@@ -96,8 +96,8 @@ export async function bulkCreateShifts(shifts: ParsedShift[]): Promise<BulkCreat
   }
 
   revalidatePath("/");
-  revalidatePath("/shifts");
-  redirect("/shifts");
+  revalidatePath("/all-time");
+  redirect("/all-time");
 }
 
 export async function updateShiftInPlace(
@@ -131,7 +131,7 @@ export async function updateShiftInPlace(
   }
 
   revalidatePath("/");
-  revalidatePath("/shifts");
+  revalidatePath("/all-time");
   revalidatePath("/weekly");
   refresh();
   return { success: true };
@@ -146,5 +146,5 @@ export async function deleteShift(id: string): Promise<void> {
   }
 
   revalidatePath("/");
-  revalidatePath("/shifts");
+  revalidatePath("/all-time");
 }

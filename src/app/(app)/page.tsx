@@ -1,18 +1,8 @@
 import { AppBreakdownChart } from "@/components/charts/AppBreakdownChart";
 import { EarningsOverTimeChart } from "@/components/charts/EarningsOverTimeChart";
-import { MonthlyEarningsChart } from "@/components/charts/MonthlyEarningsChart";
-import { WeeklyEarningsChart } from "@/components/charts/WeeklyEarningsChart";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { getApps, getShifts } from "@/lib/queries/shifts";
-import {
-  aggregateByApp,
-  aggregateWeeklyTotalsForYear,
-  aggregateWeekByApp,
-  aggregateYearByApp,
-  computeTotals,
-  getMondayOfWeek,
-  getYearRange,
-} from "@/lib/utils/aggregate";
+import { aggregateByApp, aggregateWeeklyTotalsForYear, computeTotals, getYearRange } from "@/lib/utils/aggregate";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
 
 function todayISODate(): string {
@@ -29,10 +19,6 @@ export default async function DashboardPage() {
   const today = todayISODate();
   const currentYear = Number(today.slice(0, 4));
 
-  const weekStart = getMondayOfWeek(today);
-  const weeklyEarnings = aggregateWeekByApp(shifts, apps, weekStart);
-
-  const monthlyEarnings = aggregateYearByApp(shifts, apps, currentYear);
   const earningsOverTime = aggregateWeeklyTotalsForYear(shifts, currentYear);
   const yearRange = getYearRange(shifts) ?? { minYear: currentYear, maxYear: currentYear };
 
@@ -70,20 +56,6 @@ export default async function DashboardPage() {
           </h2>
           <AppBreakdownChart data={earningsByApp} colorByAppName={colorByAppName} />
         </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <WeeklyEarningsChart apps={apps} initialWeekStart={weekStart} initialData={weeklyEarnings} />
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <MonthlyEarningsChart
-          apps={apps}
-          initialYear={currentYear}
-          initialData={monthlyEarnings}
-          minYear={yearRange.minYear}
-          maxYear={yearRange.maxYear}
-        />
       </div>
     </div>
   );

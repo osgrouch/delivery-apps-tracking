@@ -15,11 +15,14 @@ export function Nav() {
           <Link href="/" className="text-muted-foreground hover:text-foreground">
             Dashboard
           </Link>
-          <Link href="/shifts" className="text-muted-foreground hover:text-foreground">
-            Shifts
+          <Link href="/shifts/new" className="text-muted-foreground hover:text-foreground">
+            Add Shifts
           </Link>
           <Link href="/weekly" className="text-muted-foreground hover:text-foreground">
             Weekly View
+          </Link>
+          <Link href="/all-time" className="text-muted-foreground hover:text-foreground">
+            All Time View
           </Link>
           <form action={signOut}>
             <button type="submit" className="text-muted-foreground hover:text-foreground">
