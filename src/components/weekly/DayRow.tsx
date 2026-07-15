@@ -1,5 +1,5 @@
+import { DayLabelBlock } from "@/components/weekly/DayLabelBlock";
 import { ShiftCard } from "@/components/weekly/ShiftCard";
-import { formatCurrency, formatShortDate } from "@/lib/utils/format";
 import type { App, ShiftWithApp } from "@/types/database.types";
 
 interface DayRowProps {
@@ -15,15 +15,13 @@ export function DayRow({ label, date, shifts, colorByAppId, apps }: DayRowProps)
 
   return (
     <div className="flex min-h-[8rem] items-stretch border-b border-border last:border-b-0">
-      <div className="flex w-24 shrink-0 flex-col justify-center gap-0.5 border-r border-border px-3">
-        <span className="text-sm font-medium text-foreground">{label}</span>
-        <span className="font-mono text-xs text-muted-foreground">{formatShortDate(date)}</span>
-        {shifts.length > 0 ? (
-          <span className="mt-1 font-mono text-xs font-medium text-green-500">
-            {formatCurrency(dayTotal)}
-          </span>
-        ) : null}
-      </div>
+      <DayLabelBlock
+        label={label}
+        date={date}
+        dayTotal={dayTotal}
+        hasShifts={shifts.length > 0}
+        className="w-24 shrink-0 border-r border-border"
+      />
       <div className="flex flex-1 items-center gap-4 overflow-x-auto overflow-y-hidden px-3 py-4">
         {shifts.length === 0 ? (
           <span className="text-xs text-muted-foreground italic">No shifts logged</span>
