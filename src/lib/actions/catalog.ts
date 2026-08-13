@@ -35,7 +35,7 @@ export async function createApp(
     return { error: error.code === UNIQUE_VIOLATION ? `"${name}" is already an app` : error.message };
   }
 
-  revalidatePath("/shifts/new");
+  revalidatePath("/add");
   refresh();
   return { success: true };
 }
@@ -56,7 +56,7 @@ export async function createLocation(
     return { error: error.code === UNIQUE_VIOLATION ? `"${name}" is already a location` : error.message };
   }
 
-  revalidatePath("/shifts/new");
+  revalidatePath("/add");
   refresh();
   return { success: true };
 }
