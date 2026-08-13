@@ -4,15 +4,16 @@ import { EditShiftModal } from "@/components/shifts/EditShiftModal";
 import { StatCell } from "@/components/ui/StatCell";
 import { deriveShiftMetrics } from "@/lib/utils/aggregate";
 import { formatCurrency, formatDuration, formatNumber } from "@/lib/utils/format";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 interface ShiftCardProps {
   shift: ShiftWithApp;
   color: string;
   apps: App[];
+  locations: Location[];
 }
 
-export function ShiftCard({ shift, color, apps }: ShiftCardProps) {
+export function ShiftCard({ shift, color, apps, locations }: ShiftCardProps) {
   const { dollarsPerHour, dollarsPerMile, dollarsPerTrip } = deriveShiftMetrics(shift);
   const durationLabel = formatDuration(shift.hours);
 
@@ -27,9 +28,15 @@ export function ShiftCard({ shift, color, apps }: ShiftCardProps) {
           <span className="font-mono text-[10px] text-muted-foreground md:text-[12px]">
             {shift.start_time.slice(0, 5)}–{shift.end_time.slice(0, 5)}
           </span>
-          <EditShiftModal shift={shift} apps={apps} />
+          <EditShiftModal shift={shift} apps={apps} locations={locations} />
         </div>
       </div>
+
+      {shift.location ? (
+        <div className="px-[14px] pb-[11px] md:px-[17px] md:pb-[14px]">
+          <span className="text-[9px] text-muted-foreground md:text-[11px]">in {shift.location.name}</span>
+        </div>
+      ) : null}
 
       <div className="mb-[11px] px-[14px] md:mb-[14px] md:px-[17px]">
         <div className="mb-[2px] text-[8px] tracking-widest text-muted-foreground uppercase md:mb-[3px] md:text-[10px]">

@@ -17,6 +17,7 @@ export interface ShiftActionResult {
 function parseShiftForm(formData: FormData) {
   return shiftFormSchema.safeParse({
     appId: formData.get("appId"),
+    locationId: formData.get("locationId"),
     date: formData.get("date"),
     startTime: formData.get("startTime"),
     endTime: formData.get("endTime"),
@@ -39,6 +40,7 @@ export async function createShift(
   const supabase = await createClient();
   const { error } = await supabase.from("shifts").insert({
     app_id: parsed.data.appId,
+    location_id: parsed.data.locationId,
     date: parsed.data.date,
     start_time: parsed.data.startTime,
     end_time: parsed.data.endTime,
@@ -78,6 +80,7 @@ export async function bulkCreateShifts(shifts: ParsedShift[]): Promise<BulkCreat
     }
     rows.push({
       app_id: parsed.data.appId,
+      location_id: parsed.data.locationId,
       date: parsed.data.date,
       start_time: parsed.data.startTime,
       end_time: parsed.data.endTime,
@@ -116,6 +119,7 @@ export async function updateShiftInPlace(
     .from("shifts")
     .update({
       app_id: parsed.data.appId,
+      location_id: parsed.data.locationId,
       date: parsed.data.date,
       start_time: parsed.data.startTime,
       end_time: parsed.data.endTime,

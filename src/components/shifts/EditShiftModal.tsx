@@ -6,16 +6,17 @@ import { useState } from "react";
 import { EditShiftForm } from "@/components/shifts/EditShiftForm";
 import { Modal } from "@/components/ui/Modal";
 import { updateShiftInPlace } from "@/lib/actions/shifts";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 interface EditShiftModalProps {
   shift: ShiftWithApp;
   apps: App[];
+  locations: Location[];
   /** "icon" is a bare pencil button (shift cards); "text" is a plain "Edit" link-style button (table rows). */
   variant?: "icon" | "text";
 }
 
-export function EditShiftModal({ shift, apps, variant = "icon" }: EditShiftModalProps) {
+export function EditShiftModal({ shift, apps, locations, variant = "icon" }: EditShiftModalProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -35,6 +36,7 @@ export function EditShiftModal({ shift, apps, variant = "icon" }: EditShiftModal
       <Modal open={open} onClose={() => setOpen(false)} title="Edit Shift" maxWidthClassName="max-w-2xl">
         <EditShiftForm
           apps={apps}
+          locations={locations}
           action={updateShiftInPlace.bind(null, shift.id)}
           defaultValues={shift}
           submitLabel="Save changes"

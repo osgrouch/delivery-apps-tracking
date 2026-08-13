@@ -33,10 +33,26 @@ export interface Database {
         };
         Relationships: [];
       };
+      locations: {
+        Row: {
+          id: number;
+          name: string;
+        };
+        Insert: {
+          id?: number;
+          name: string;
+        };
+        Update: {
+          id?: number;
+          name?: string;
+        };
+        Relationships: [];
+      };
       shifts: {
         Row: {
           id: string;
           app_id: number;
+          location_id: number | null;
           date: string;
           start_time: string;
           end_time: string;
@@ -49,6 +65,7 @@ export interface Database {
         Insert: {
           id?: string;
           app_id: number;
+          location_id?: number | null;
           date: string;
           start_time: string;
           end_time: string;
@@ -61,6 +78,7 @@ export interface Database {
         Update: {
           id?: string;
           app_id?: number;
+          location_id?: number | null;
           date?: string;
           start_time?: string;
           end_time?: string;
@@ -78,6 +96,13 @@ export interface Database {
             referencedRelation: "apps";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "shifts_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          },
         ];
       };
     };
@@ -89,9 +114,13 @@ export interface Database {
 }
 
 export type App = Database["public"]["Tables"]["apps"]["Row"];
+export type Location = Database["public"]["Tables"]["locations"]["Row"];
 export type Shift = Database["public"]["Tables"]["shifts"]["Row"];
 export type ShiftInsert = Database["public"]["Tables"]["shifts"]["Insert"];
 export type ShiftUpdate = Database["public"]["Tables"]["shifts"]["Update"];
 
-/** A shift joined with its app name, as returned by dashboard queries. */
-export type ShiftWithApp = Shift & { app: Pick<App, "id" | "name"> };
+/** A shift joined with its app and location, as returned by dashboard queries. */
+export type ShiftWithApp = Shift & {
+  app: Pick<App, "id" | "name">;
+  location: Pick<Location, "id" | "name"> | null;
+};

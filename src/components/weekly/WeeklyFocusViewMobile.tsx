@@ -10,12 +10,13 @@ import { WeekCalendar } from "@/components/weekly/WeekCalendar";
 import type { WeeklyFooterItem } from "@/components/weekly/useWeeklyFocusData";
 import { addDaysISO, type DateApp, type WeeklyDayEarnings } from "@/lib/utils/aggregate";
 import { formatShortDate, formatWeekRangeTitle } from "@/lib/utils/format";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 const WEEKDAY_SHORT_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 interface WeeklyFocusViewMobileProps {
   apps: App[];
+  locations: Location[];
   weekStarts: string[];
   appsByDate: Record<string, DateApp[]>;
   today: string;
@@ -38,6 +39,7 @@ interface WeeklyFocusViewMobileProps {
  */
 export function WeeklyFocusViewMobile({
   apps,
+  locations,
   weekStarts,
   appsByDate,
   today,
@@ -127,6 +129,7 @@ export function WeeklyFocusViewMobile({
                     shifts={shiftsByWeekday[index]}
                     colorByAppId={colorByAppId}
                     apps={apps}
+                    locations={locations}
                   />
                 </div>
               ))}

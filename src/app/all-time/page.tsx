@@ -1,5 +1,5 @@
 import { AllTimeFocusView } from "@/components/all-time/AllTimeFocusView";
-import { getApps, getShifts } from "@/lib/queries/shifts";
+import { getApps, getLocations, getShifts } from "@/lib/queries/shifts";
 import { aggregateTotalsByApp, aggregateYearByApp, getYearRange } from "@/lib/utils/aggregate";
 
 function todayISODate(): string {
@@ -8,7 +8,7 @@ function todayISODate(): string {
 }
 
 export default async function AllTimeFocusPage() {
-  const [shifts, apps] = await Promise.all([getShifts(), getApps()]);
+  const [shifts, apps, locations] = await Promise.all([getShifts(), getApps(), getLocations()]);
 
   const currentYear = Number(todayISODate().slice(0, 4));
   const monthlyEarnings = aggregateYearByApp(shifts, apps, currentYear);
@@ -18,6 +18,7 @@ export default async function AllTimeFocusPage() {
   return (
     <AllTimeFocusView
       apps={apps}
+      locations={locations}
       shifts={shifts}
       totalsByApp={totalsByApp}
       initialYear={currentYear}

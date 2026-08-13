@@ -8,7 +8,7 @@ import { DeleteShiftButton } from "@/components/shifts/DeleteShiftButton";
 import { EditShiftModal } from "@/components/shifts/EditShiftModal";
 import { ShiftCard } from "@/components/weekly/ShiftCard";
 import { formatCurrency, formatDate, formatDuration } from "@/lib/utils/format";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 const selectClasses =
   "rounded-md border border-border bg-input px-2 py-1 text-sm text-foreground outline-none focus:border-primary";
@@ -16,6 +16,7 @@ const selectClasses =
 interface AllTimeShiftTableProps {
   visibleShifts: ShiftWithApp[];
   apps: App[];
+  locations: Location[];
   colorByAppId: Map<number, string>;
   appFilter: "all" | number;
   setAppFilter: (value: "all" | number) => void;
@@ -30,6 +31,7 @@ interface AllTimeShiftTableProps {
 export function AllTimeShiftTable({
   visibleShifts,
   apps,
+  locations,
   colorByAppId,
   appFilter,
   setAppFilter,
@@ -113,6 +115,7 @@ export function AllTimeShiftTable({
                   <th className="px-4 py-2 font-medium" aria-label="Preview" />
                 <th className="px-4 py-2 font-medium">Date</th>
                 <th className="px-4 py-2 font-medium">App</th>
+                <th className="px-4 py-2 font-medium">Location</th>
                 <th className="px-4 py-2 font-medium">Time</th>
                 <th className="px-4 py-2 text-right font-medium">Hours</th>
                 <th className="px-4 py-2 text-right font-medium">Earnings</th>
@@ -138,6 +141,7 @@ export function AllTimeShiftTable({
                       </td>
                       <td className="whitespace-nowrap px-4 py-2">{formatDate(shift.date)}</td>
                       <td className="px-4 py-2">{shift.app.name}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{shift.location?.name ?? "—"}</td>
                       <td className="whitespace-nowrap px-4 py-2">
                         {shift.start_time.slice(0, 5)}–{shift.end_time.slice(0, 5)}
                       </td>
@@ -147,7 +151,7 @@ export function AllTimeShiftTable({
                       <td className="px-4 py-2 text-right">{shift.trips}</td>
                       <td className="px-4 py-2 text-right">
                         <div className="flex items-center justify-end gap-3">
-                          <EditShiftModal shift={shift} apps={apps} variant="text" />
+                          <EditShiftModal shift={shift} apps={apps} locations={locations} variant="text" />
                           <DeleteShiftButton id={shift.id} />
                           <button
                             type="button"
@@ -164,7 +168,7 @@ export function AllTimeShiftTable({
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan={9} className="p-0">
+                      <td colSpan={10} className="p-0">
                         <div
                           className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                             }`}
@@ -176,6 +180,7 @@ export function AllTimeShiftTable({
                                   shift={shift}
                                   color={colorByAppId.get(shift.app.id) ?? "#64748b"}
                                   apps={apps}
+                                  locations={locations}
                                 />
                               </div>
                             </div>

@@ -4,6 +4,7 @@ import { shiftFormSchema } from "@/lib/validation/shift";
 
 const validShift = {
   appId: "1",
+  locationId: "3",
   date: "2026-01-01",
   startTime: "09:00",
   endTime: "17:00",
@@ -18,6 +19,7 @@ describe("shiftFormSchema", () => {
 
     expect(result).toEqual({
       appId: 1,
+      locationId: 3,
       date: "2026-01-01",
       startTime: "09:00",
       endTime: "17:00",
@@ -25,6 +27,11 @@ describe("shiftFormSchema", () => {
       mileage: 45.2,
       trips: 12,
     });
+  });
+
+  it("treats an empty locationId (an unselected <select>) as null", () => {
+    const result = shiftFormSchema.parse({ ...validShift, locationId: "" });
+    expect(result.locationId).toBeNull();
   });
 
   it("rejects an end time that is not after the start time", () => {

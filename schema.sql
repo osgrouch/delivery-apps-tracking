@@ -13,6 +13,14 @@ create table if not exists apps (
 -- Backfill for a database created before `color` existed.
 alter table apps add column if not exists color text not null default '#64748b';
 
+-- Locations a shift can happen at. A location is its own entity (can exist
+-- with zero shifts against it), so it's a real table rather than a
+-- free-text column on shifts.
+create table if not exists locations (
+    id   integer generated always as identity primary key,
+    name text not null unique
+);
+
 -- Individual delivery shifts
 create table if not exists shifts (
     id         uuid primary key default gen_random_uuid(),
@@ -27,18 +35,32 @@ create table if not exists shifts (
     created_at timestamptz not null default now()
 );
 
-create index if not exists idx_shifts_date   on shifts (date);
-create index if not exists idx_shifts_app_id on shifts (app_id);
+-- Backfill for a database created before `location_id` existed. Nullable:
+-- existing shifts stay NULL (no way to know where they happened after the
+-- fact). Shift creation should start requiring a location going forward,
+-- but that's a follow-up to the shift form UI, not this migration.
+alter table shifts add column if not exists location_id integer references locations (id) on delete set null;
+
+create index if not exists idx_shifts_date        on shifts (date);
+create index if not exists idx_shifts_app_id      on shifts (app_id);
+create index if not exists idx_shifts_location_id on shifts (location_id);
 
 -- Row Level Security
 -- This is a single-tenant app: one authenticated owner account.
 -- The Supabase anon key alone can never read or write; a valid
 -- authenticated session (via Supabase Auth) is required for everything.
-alter table apps   enable row level security;
-alter table shifts enable row level security;
+alter table apps      enable row level security;
+alter table locations enable row level security;
+alter table shifts    enable row level security;
 
 create policy "Authenticated access to apps"
     on apps for all
+    to authenticated
+    using (true)
+    with check (true);
+
+create policy "Authenticated access to locations"
+    on locations for all
     to authenticated
     using (true)
     with check (true);
@@ -56,7 +78,7 @@ create policy "Authenticated access to shifts"
 -- scripts/import-shifts.ts). anon is intentionally left ungranted — only
 -- an authenticated session or the service role can touch these tables.
 grant usage on schema public to authenticated, service_role;
-grant select, insert, update, delete on apps, shifts to authenticated, service_role;
+grant select, insert, update, delete on apps, locations, shifts to authenticated, service_role;
 
 -- Apply the same grants automatically to any tables added later.
 alter default privileges in schema public
@@ -64,10 +86,23 @@ alter default privileges in schema public
 
 -- Seed the known delivery platforms
 insert into apps (name)
-values ('Uber Eats'), ('DoorDash'), ('InstaCart')
+values ('UberEats'), ('DoorDash'), ('InstaCart')
 on conflict (name) do nothing;
 
+-- Drop the space in "Uber Eats" so it matches the app's actual brand name
+-- (fixes up rows seeded before the rename).
+update apps set name = 'UberEats' where name = 'Uber Eats';
+
 -- Brand colors (also fixes up rows seeded before `color` existed).
-update apps set color = '#286ef0' where name = 'Uber Eats';
+update apps set color = '#286ef0' where name = 'UberEats';
 update apps set color = '#f72e09' where name = 'DoorDash';
 update apps set color = '#09af07' where name = 'InstaCart';
+
+-- Seed the known locations, and backfill every shift to "Rochester, NY"
+-- (where all shifts logged so far were worked from).
+insert into locations (name)
+values ('Rochester, NY'), ('Williamsport, PA')
+on conflict (name) do nothing;
+
+update shifts
+set location_id = (select id from locations where name = 'Rochester, NY');

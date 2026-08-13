@@ -8,8 +8,15 @@ export const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
  * and end relate to each other, since the bulk importer allows shifts
  * that cross midnight (end time computed with wraparound).
  */
+/** "" (an unselected <select>) or a missing value both mean "no location". */
+const optionalLocationId = z.preprocess(
+  (value) => (value === "" || value == null ? null : value),
+  z.coerce.number().int().positive().nullable(),
+);
+
 export const shiftFieldsSchema = z.object({
   appId: z.coerce.number().int().positive("Select a delivery app"),
+  locationId: optionalLocationId,
   date: z.string().date("Enter a valid date"),
   startTime: z.string().regex(TIME_RE, "Use 24-hour HH:MM format"),
   endTime: z.string().regex(TIME_RE, "Use 24-hour HH:MM format"),

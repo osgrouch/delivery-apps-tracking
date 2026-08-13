@@ -2,19 +2,26 @@
 
 import { useActionState, useEffect } from "react";
 
-import { AppSelectField, EarningsField, MileageField, TripsField } from "@/components/shifts/ShiftForm";
+import {
+  AppSelectField,
+  EarningsField,
+  LocationSelectField,
+  MileageField,
+  TripsField,
+} from "@/components/shifts/ShiftForm";
 import { ShiftDateCalendar } from "@/components/shifts/ShiftDateCalendar";
 import { TimeSpinner } from "@/components/ui/TimeSpinner";
 import type { ShiftActionResult } from "@/lib/actions/shifts";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 type ShiftDefaults = Pick<
   ShiftWithApp,
-  "app_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips"
+  "app_id" | "location_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips"
 >;
 
 interface EditShiftFormProps {
   apps: App[];
+  locations: Location[];
   action: (prevState: ShiftActionResult, formData: FormData) => Promise<ShiftActionResult>;
   defaultValues: ShiftDefaults;
   submitLabel?: string;
@@ -25,6 +32,7 @@ const initialState: ShiftActionResult = {};
 
 export function EditShiftForm({
   apps,
+  locations,
   action,
   defaultValues,
   submitLabel = "Save changes",
@@ -73,6 +81,11 @@ export function EditShiftForm({
 
         <div className="flex flex-col justify-center gap-4">
           <AppSelectField apps={apps} defaultValue={defaultValues.app_id} errors={state.fieldErrors?.appId} />
+          <LocationSelectField
+            locations={locations}
+            defaultValue={defaultValues.location_id}
+            errors={state.fieldErrors?.locationId}
+          />
           <EarningsField defaultValue={defaultValues.earnings} errors={state.fieldErrors?.earnings} />
           <MileageField defaultValue={defaultValues.mileage} errors={state.fieldErrors?.mileage} />
           <TripsField defaultValue={defaultValues.trips} errors={state.fieldErrors?.trips} />

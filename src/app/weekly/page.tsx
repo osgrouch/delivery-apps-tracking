@@ -1,5 +1,5 @@
 import { WeeklyFocusView } from "@/components/weekly/WeeklyFocusView";
-import { getApps, getShifts } from "@/lib/queries/shifts";
+import { getApps, getLocations, getShifts } from "@/lib/queries/shifts";
 import {
   getDistinctAppsByDate,
   getEarliestShiftDate,
@@ -14,7 +14,7 @@ function todayISODate(): string {
 }
 
 export default async function WeeklyFocusPage() {
-  const [shifts, apps] = await Promise.all([getShifts(), getApps()]);
+  const [shifts, apps, locations] = await Promise.all([getShifts(), getApps(), getLocations()]);
 
   const today = todayISODate();
   const currentWeekStart = getMondayOfWeek(today);
@@ -26,6 +26,7 @@ export default async function WeeklyFocusPage() {
   return (
     <WeeklyFocusView
       apps={apps}
+      locations={locations}
       shifts={shifts}
       weekStarts={weekStarts}
       initialWeekStart={currentWeekStart}

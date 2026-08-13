@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BulkShiftForm } from "@/components/shifts/BulkShiftForm";
 import { ShiftForm } from "@/components/shifts/ShiftForm";
 import { createShift } from "@/lib/actions/shifts";
-import type { App } from "@/types/database.types";
+import type { App, Location } from "@/types/database.types";
 
 type Tab = "bulk" | "single";
 
@@ -15,7 +15,7 @@ function tabClasses(active: boolean): string {
     : "rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary";
 }
 
-export function AddShiftsTabs({ apps }: { apps: App[] }) {
+export function AddShiftsTabs({ apps, locations }: { apps: App[]; locations: Location[] }) {
   const [tab, setTab] = useState<Tab>("bulk");
 
   return (
@@ -46,12 +46,13 @@ export function AddShiftsTabs({ apps }: { apps: App[] }) {
           <p className="max-w-2xl text-sm text-muted-foreground">
             Paste one or more shifts. Each shift needs an app, earnings, mileage, trip count, and a
             start-end time range on its own line. A date line applies to every shift after it until
-            a new date is given.
+            a new date is given, and a location line works the same way — both are optional and only
+            need to appear when they change.
           </p>
-          <BulkShiftForm apps={apps} />
+          <BulkShiftForm apps={apps} locations={locations} />
         </div>
       ) : (
-        <ShiftForm apps={apps} action={createShift} submitLabel="Add shift" />
+        <ShiftForm apps={apps} locations={locations} action={createShift} submitLabel="Add shift" />
       )}
     </div>
   );

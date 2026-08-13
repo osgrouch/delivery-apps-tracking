@@ -7,10 +7,11 @@ import type { AllTimeFooterItem, SortOption } from "@/components/all-time/useAll
 import { MonthlyEarningsChart } from "@/components/charts/MonthlyEarningsChart";
 import { AppTotalsCard } from "@/components/shifts/AppTotalsCard";
 import type { AppTotals, MonthlyEarnings } from "@/lib/utils/aggregate";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 interface AllTimeFocusViewMobileProps {
   apps: App[];
+  locations: Location[];
   totalsByApp: AppTotals[];
   colorByAppId: Map<number, string>;
   initialYear: number;
@@ -40,6 +41,7 @@ interface AllTimeFocusViewMobileProps {
  */
 export function AllTimeFocusViewMobile({
   apps,
+  locations,
   totalsByApp,
   colorByAppId,
   initialYear,
@@ -132,6 +134,7 @@ export function AllTimeFocusViewMobile({
             <AllTimeShiftTable
               visibleShifts={visibleShifts}
               apps={apps}
+              locations={locations}
               colorByAppId={colorByAppId}
               appFilter={appFilter}
               setAppFilter={setAppFilter}

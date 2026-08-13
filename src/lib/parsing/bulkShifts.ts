@@ -1,22 +1,26 @@
 import { shiftFieldsSchema } from "@/lib/validation/shift";
-import type { App } from "@/types/database.types";
+import type { App, Location } from "@/types/database.types";
 
 /**
  * Parses free-form pasted text describing one or more delivery shifts.
  * Expected shape, repeated for each shift:
  *
  *   [DATE]              (optional — reuses the last date seen if omitted)
+ *   [LOCATION]           (optional — reuses the last location seen if omitted)
  *   [APP]
  *   [EARNINGS]
  *   [MILES]
  *   [TRIPS COUNT]
  *   [START]-[END]
  *
- * DATE lines only need to appear when the date changes; every other line
- * is required for every shift. Times may be 24-hour with or without a
- * colon (e.g. "1730", "17:30") or 12-hour with an am/pm suffix
- * (e.g. "530pm", "5:30pm"). Shifts that cross midnight are supported —
- * hours are computed with wraparound rather than rejected.
+ * DATE and LOCATION lines only need to appear when they change; every
+ * other line is required for every shift. Unlike DATE, a missing LOCATION
+ * is not a parse error — shifts with no location seen yet just come back
+ * with locationId: null, for the caller to prompt for and backfill. Times
+ * may be 24-hour with or without a colon (e.g. "1730", "17:30") or
+ * 12-hour with an am/pm suffix (e.g. "530pm", "5:30pm"). Shifts that
+ * cross midnight are supported — hours are computed with wraparound
+ * rather than rejected.
  */
 
 export interface ParsedShift {
@@ -24,6 +28,8 @@ export interface ParsedShift {
   lineNumber: number;
   appId: number;
   appName: string;
+  locationId: number | null;
+  locationName: string | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -50,6 +56,11 @@ function pad(n: number): string {
 function matchApp(raw: string, apps: App[]): App | undefined {
   const normalized = raw.trim().toLowerCase();
   return apps.find((app) => app.name.toLowerCase() === normalized);
+}
+
+function matchLocation(raw: string, locations: Location[]): Location | undefined {
+  const normalized = raw.trim().toLowerCase();
+  return locations.find((location) => location.name.toLowerCase() === normalized);
 }
 
 /** Only US slash dates: "M/D" or "M/D/YYYY" (year defaults to referenceYear). */
@@ -137,6 +148,7 @@ function parseNumber(raw: string): number | null {
 export function parseBulkShiftsText(
   text: string,
   apps: App[],
+  locations: Location[],
   referenceDate: Date = new Date(),
 ): BulkParseResult {
   const lines = text
@@ -149,6 +161,8 @@ export function parseBulkShiftsText(
   const referenceYear = referenceDate.getFullYear();
 
   let currentDate: string | null = null;
+  let currentLocationId: number | null = null;
+  let currentLocationName: string | null = null;
   let i = 0;
 
   while (i < lines.length) {
@@ -161,6 +175,18 @@ export function parseBulkShiftsText(
       i++;
       if (i >= lines.length) {
         issues.push({ lineNumber, message: "Date is not followed by a shift" });
+        break;
+      }
+      line = lines[i];
+    }
+
+    const maybeLocation = matchLocation(line, locations);
+    if (maybeLocation && !matchApp(line, apps)) {
+      currentLocationId = maybeLocation.id;
+      currentLocationName = maybeLocation.name;
+      i++;
+      if (i >= lines.length) {
+        issues.push({ lineNumber, message: "Location is not followed by a shift" });
         break;
       }
       line = lines[i];
@@ -223,6 +249,8 @@ export function parseBulkShiftsText(
       lineNumber,
       appId: app.id,
       appName: app.name,
+      locationId: currentLocationId,
+      locationName: currentLocationName,
       date: currentDate,
       startTime: range.start,
       endTime: range.end,

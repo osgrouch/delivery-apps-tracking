@@ -8,7 +8,7 @@ import { WeeklyFocusViewMobile } from "@/components/weekly/WeeklyFocusViewMobile
 import { useWeeklyFocusData } from "@/components/weekly/useWeeklyFocusData";
 import { addDaysISO, type DateApp } from "@/lib/utils/aggregate";
 import { formatShortDate, formatWeekRangeTitle } from "@/lib/utils/format";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 const WEEKDAY_FULL_LABELS = [
   "Monday",
@@ -22,6 +22,7 @@ const WEEKDAY_FULL_LABELS = [
 
 interface WeeklyFocusViewProps {
   apps: App[];
+  locations: Location[];
   shifts: ShiftWithApp[];
   weekStarts: string[];
   initialWeekStart: string;
@@ -31,6 +32,7 @@ interface WeeklyFocusViewProps {
 
 export function WeeklyFocusView({
   apps,
+  locations,
   shifts,
   weekStarts,
   initialWeekStart,
@@ -91,6 +93,7 @@ export function WeeklyFocusView({
                   shifts={shiftsByWeekday[index]}
                   colorByAppId={colorByAppId}
                   apps={apps}
+                  locations={locations}
                 />
               ))}
             </div>
@@ -123,6 +126,7 @@ export function WeeklyFocusView({
 
       <WeeklyFocusViewMobile
         apps={apps}
+        locations={locations}
         weekStarts={weekStarts}
         appsByDate={appsByDate}
         today={today}

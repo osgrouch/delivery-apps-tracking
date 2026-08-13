@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 export async function getApps(): Promise<App[]> {
   const supabase = await createClient();
@@ -7,6 +7,17 @@ export async function getApps(): Promise<App[]> {
 
   if (error) {
     throw new Error(`Failed to load apps: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function getLocations(): Promise<Location[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("locations").select("*").order("name");
+
+  if (error) {
+    throw new Error(`Failed to load locations: ${error.message}`);
   }
 
   return data;
@@ -21,7 +32,7 @@ export async function getShifts(filters: ShiftFilters = {}): Promise<ShiftWithAp
   const supabase = await createClient();
   let query = supabase
     .from("shifts")
-    .select("*, app:apps(id, name)")
+    .select("*, app:apps(id, name), location:locations(id, name)")
     .order("date", { ascending: false })
     .order("start_time", { ascending: false });
 

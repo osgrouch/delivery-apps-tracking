@@ -3,15 +3,16 @@
 import { useActionState, useEffect } from "react";
 
 import type { ShiftActionResult } from "@/lib/actions/shifts";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 type ShiftDefaults = Pick<
   ShiftWithApp,
-  "app_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips"
+  "app_id" | "location_id" | "date" | "start_time" | "end_time" | "earnings" | "mileage" | "trips"
 >;
 
 interface ShiftFormProps {
   apps: App[];
+  locations: Location[];
   action: (prevState: ShiftActionResult, formData: FormData) => Promise<ShiftActionResult>;
   defaultValues?: ShiftDefaults;
   submitLabel?: string;
@@ -77,6 +78,29 @@ export function AppSelectField({
   );
 }
 
+export function LocationSelectField({
+  locations,
+  defaultValue,
+  errors,
+}: {
+  locations: Location[];
+  defaultValue?: number | null;
+  errors?: string[];
+}) {
+  return (
+    <Field label="Location" htmlFor="locationId" errors={errors}>
+      <select id="locationId" name="locationId" defaultValue={defaultValue ?? ""} className={inputClasses}>
+        <option value="">No location</option>
+        {locations.map((location) => (
+          <option key={location.id} value={location.id}>
+            {location.name}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
 export function EarningsField({ defaultValue, errors }: ShiftFieldProps) {
   return (
     <Field label="Earnings ($)" htmlFor="earnings" errors={errors}>
@@ -130,6 +154,7 @@ export function TripsField({ defaultValue, errors }: ShiftFieldProps) {
 
 export function ShiftForm({
   apps,
+  locations,
   action,
   defaultValues,
   submitLabel = "Save shift",
@@ -144,6 +169,12 @@ export function ShiftForm({
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
       <AppSelectField apps={apps} defaultValue={defaultValues?.app_id} errors={state.fieldErrors?.appId} />
+
+      <LocationSelectField
+        locations={locations}
+        defaultValue={defaultValues?.location_id}
+        errors={state.fieldErrors?.locationId}
+      />
 
       <Field label="Date" htmlFor="date" errors={state.fieldErrors?.date}>
         <input
