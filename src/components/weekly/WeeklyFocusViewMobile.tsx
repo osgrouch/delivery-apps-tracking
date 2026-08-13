@@ -108,7 +108,7 @@ export function WeeklyFocusViewMobile({
         ) : null}
 
         <div
-          className={`absolute inset-y-0 right-0 z-20 flex flex-col overflow-hidden bg-card shadow-[-8px_0_20px_rgba(0,0,0,0.4)] transition-[width] duration-300 ease-in-out ${
+          className={`absolute inset-y-0 right-0 z-20 flex flex-col overflow-hidden bg-card shadow-[-8px_0_20px_rgba(0,0,0,0.4)] transition-[width] duration-500 ease-in-out ${
             expanded ? "w-[calc(100%-6rem)]" : "w-24"
           }`}
         >

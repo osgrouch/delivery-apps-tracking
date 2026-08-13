@@ -9,7 +9,7 @@ export function AppTotalsCard({ totals, color }: { totals: AppTotals; color: str
 
   return (
     <div
-      className="flex w-[323px] shrink-0 flex-col overflow-hidden border-2 bg-card shadow-[0_3px_20px_rgba(0,0,0,0.4)]"
+      className="flex w-full max-w-[323px] shrink-0 flex-col overflow-hidden border-2 bg-card shadow-[0_3px_20px_rgba(0,0,0,0.4)]"
       style={{ borderColor: color }}
     >
       <div className="flex items-center justify-between px-[17px] pt-[17px] pb-[14px]">

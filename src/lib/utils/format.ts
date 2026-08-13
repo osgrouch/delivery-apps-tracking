@@ -14,6 +14,12 @@ const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
+const shortDateWithYearFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "numeric",
+  day: "numeric",
+  year: "2-digit",
+});
+
 const monthYearFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
   year: "numeric",
@@ -38,6 +44,11 @@ export function formatDate(isoDate: string): string {
 /** Compact "M/D" form, e.g. for chart axis ticks where space is tight. */
 export function formatShortDate(isoDate: string): string {
   return shortDateFormatter.format(new Date(`${isoDate}T00:00:00`));
+}
+
+/** Compact "M/D/YY" form, for ranges that need to disambiguate the year. */
+export function formatShortDateWithYear(isoDate: string): string {
+  return shortDateWithYearFormatter.format(new Date(`${isoDate}T00:00:00`));
 }
 
 export function formatNumber(value: number, fractionDigits = 1): string {
