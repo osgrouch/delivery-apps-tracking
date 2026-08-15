@@ -45,31 +45,69 @@ create index if not exists idx_shifts_date        on shifts (date);
 create index if not exists idx_shifts_app_id      on shifts (app_id);
 create index if not exists idx_shifts_location_id on shifts (location_id);
 
+-- Multi-tenant: every row belongs to exactly one Supabase Auth account, so
+-- more than one person can use this app without seeing each other's data.
+-- Backfill for a database created before `user_id` existed: existing rows
+-- are assigned to the earliest-created auth user (the original single
+-- owner). No-op on a fresh database with no rows yet.
+alter table apps      add column if not exists user_id uuid references auth.users (id) on delete cascade;
+alter table locations add column if not exists user_id uuid references auth.users (id) on delete cascade;
+alter table shifts    add column if not exists user_id uuid references auth.users (id) on delete cascade;
+
+update apps      set user_id = (select id from auth.users order by created_at limit 1) where user_id is null;
+update locations set user_id = (select id from auth.users order by created_at limit 1) where user_id is null;
+update shifts     set user_id = (select id from auth.users order by created_at limit 1) where user_id is null;
+
+alter table apps      alter column user_id set not null;
+alter table locations alter column user_id set not null;
+alter table shifts    alter column user_id set not null;
+
+-- New rows default to the inserting user, so a normal authenticated insert
+-- doesn't have to set user_id explicitly.
+alter table apps      alter column user_id set default auth.uid();
+alter table locations alter column user_id set default auth.uid();
+alter table shifts    alter column user_id set default auth.uid();
+
+create index if not exists idx_apps_user_id      on apps (user_id);
+create index if not exists idx_locations_user_id on locations (user_id);
+create index if not exists idx_shifts_user_id    on shifts (user_id);
+
+-- Catalog names only need to be unique per-user now, not globally, so two
+-- users can each have their own "DoorDash" or "Home".
+alter table apps      drop constraint if exists apps_name_key;
+alter table apps      add constraint apps_user_id_name_key unique (user_id, name);
+
+alter table locations drop constraint if exists locations_name_key;
+alter table locations add constraint locations_user_id_name_key unique (user_id, name);
+
 -- Row Level Security
--- This is a single-tenant app: one authenticated owner account.
+-- Each row is only visible to and writable by the account that owns it.
 -- The Supabase anon key alone can never read or write; a valid
 -- authenticated session (via Supabase Auth) is required for everything.
 alter table apps      enable row level security;
 alter table locations enable row level security;
 alter table shifts    enable row level security;
 
-create policy "Authenticated access to apps"
+drop policy if exists "Authenticated access to apps" on apps;
+create policy "Users manage their own apps"
     on apps for all
     to authenticated
-    using (true)
-    with check (true);
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
 
-create policy "Authenticated access to locations"
+drop policy if exists "Authenticated access to locations" on locations;
+create policy "Users manage their own locations"
     on locations for all
     to authenticated
-    using (true)
-    with check (true);
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
 
-create policy "Authenticated access to shifts"
+drop policy if exists "Authenticated access to shifts" on shifts;
+create policy "Users manage their own shifts"
     on shifts for all
     to authenticated
-    using (true)
-    with check (true);
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
 
 -- Table-level grants. RLS policies alone are not enough: without these,
 -- Postgres rejects every query with "permission denied for table ..."
@@ -84,25 +122,7 @@ grant select, insert, update, delete on apps, locations, shifts to authenticated
 alter default privileges in schema public
     grant select, insert, update, delete on tables to authenticated, service_role;
 
--- Seed the known delivery platforms
-insert into apps (name)
-values ('UberEats'), ('DoorDash'), ('InstaCart')
-on conflict (name) do nothing;
-
--- Drop the space in "Uber Eats" so it matches the app's actual brand name
--- (fixes up rows seeded before the rename).
-update apps set name = 'UberEats' where name = 'Uber Eats';
-
--- Brand colors (also fixes up rows seeded before `color` existed).
-update apps set color = '#286ef0' where name = 'UberEats';
-update apps set color = '#f72e09' where name = 'DoorDash';
-update apps set color = '#09af07' where name = 'InstaCart';
-
--- Seed the known locations, and backfill every shift to "Rochester, NY"
--- (where all shifts logged so far were worked from).
-insert into locations (name)
-values ('Rochester, NY'), ('Williamsport, PA')
-on conflict (name) do nothing;
-
-update shifts
-set location_id = (select id from locations where name = 'Rochester, NY');
+-- No seed data below this point: apps and locations are per-user now
+-- (see the `user_id` columns above), so there's no single "known" catalog
+-- to insert on a fresh database. Each user adds their own apps/locations
+-- from the app's "Manage" UI (ManageCatalogPanel, on /add) after signing in.

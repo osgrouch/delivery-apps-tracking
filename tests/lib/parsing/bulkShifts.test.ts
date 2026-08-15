@@ -3,15 +3,17 @@ import { describe, expect, it } from "vitest";
 import { parseBulkShiftsText } from "@/lib/parsing/bulkShifts";
 import type { App, Location } from "@/types/database.types";
 
+const userId = "00000000-0000-0000-0000-000000000001";
+
 const apps: App[] = [
-  { id: 1, name: "Uber Eats", color: "#286ef0" },
-  { id: 2, name: "Doordash", color: "#f72e09" },
-  { id: 3, name: "InstaCart", color: "#09af07" },
+  { id: 1, name: "Uber Eats", color: "#286ef0", user_id: userId },
+  { id: 2, name: "Doordash", color: "#f72e09", user_id: userId },
+  { id: 3, name: "InstaCart", color: "#09af07", user_id: userId },
 ];
 
 const locations: Location[] = [
-  { id: 1, name: "Rochester, NY" },
-  { id: 2, name: "Williamsport, PA" },
+  { id: 1, name: "Rochester, NY", user_id: userId },
+  { id: 2, name: "Williamsport, PA", user_id: userId },
 ];
 
 const referenceDate = new Date("2026-06-30T00:00:00");

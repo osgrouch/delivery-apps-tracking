@@ -20,16 +20,19 @@ export interface Database {
           id: number;
           name: string;
           color: string;
+          user_id: string;
         };
         Insert: {
           id?: number;
           name: string;
           color?: string;
+          user_id?: string;
         };
         Update: {
           id?: number;
           name?: string;
           color?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -37,14 +40,17 @@ export interface Database {
         Row: {
           id: number;
           name: string;
+          user_id: string;
         };
         Insert: {
           id?: number;
           name: string;
+          user_id?: string;
         };
         Update: {
           id?: number;
           name?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -61,6 +67,7 @@ export interface Database {
           trips: number;
           hours: number;
           created_at: string;
+          user_id: string;
         };
         Insert: {
           id?: string;
@@ -74,6 +81,7 @@ export interface Database {
           trips: number;
           hours: number;
           created_at?: string;
+          user_id?: string;
         };
         Update: {
           id?: string;
@@ -87,6 +95,7 @@ export interface Database {
           trips?: number;
           hours?: number;
           created_at?: string;
+          user_id?: string;
         };
         Relationships: [
           {

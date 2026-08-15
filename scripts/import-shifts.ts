@@ -32,10 +32,12 @@ const rawShiftSchema = z.object({
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const userId = process.env.IMPORT_USER_ID;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !serviceRoleKey || !userId) {
     throw new Error(
-      "Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local before running the import.",
+      "Set NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and IMPORT_USER_ID (the auth.users id " +
+        "to own the imported rows — apps/shifts are per-user now) in .env.local before running the import.",
     );
   }
 
@@ -48,7 +50,12 @@ async function main() {
 
   const supabase = createClient<Database>(supabaseUrl, serviceRoleKey);
 
-  const { data: apps, error: appsError } = await supabase.from("apps").select("id, name");
+  // Service role bypasses RLS, so this must be scoped to the target user
+  // explicitly — otherwise it'd match every user's apps by name.
+  const { data: apps, error: appsError } = await supabase
+    .from("apps")
+    .select("id, name")
+    .eq("user_id", userId);
   if (appsError) {
     throw new Error(`Failed to load apps: ${appsError.message}`);
   }
@@ -85,6 +92,7 @@ async function main() {
         mileage: parsed.data.mileage,
         trips: parsed.data.trips,
         hours: parsed.data.hours,
+        user_id: userId,
       },
       { onConflict: "id" },
     );
