@@ -20,6 +20,8 @@ interface AllTimeShiftTableProps {
   colorByAppId: Map<number, string>;
   appFilter: "all" | number;
   setAppFilter: (value: "all" | number) => void;
+  locationFilter: "all" | number;
+  setLocationFilter: (value: "all" | number) => void;
   fromDate: string;
   setFromDate: (value: string) => void;
   toDate: string;
@@ -35,6 +37,8 @@ export function AllTimeShiftTable({
   colorByAppId,
   appFilter,
   setAppFilter,
+  locationFilter,
+  setLocationFilter,
   fromDate,
   setFromDate,
   toDate,
@@ -64,6 +68,24 @@ export function AllTimeShiftTable({
             {apps.map((app) => (
               <option key={app.id} value={app.id}>
                 {app.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          Location
+          <select
+            value={locationFilter}
+            onChange={(event) =>
+              setLocationFilter(event.target.value === "all" ? "all" : Number(event.target.value))
+            }
+            className={selectClasses}
+          >
+            <option value="all">All Locations</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name}
               </option>
             ))}
           </select>

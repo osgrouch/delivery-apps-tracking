@@ -33,6 +33,8 @@ export function AllTimeFocusView({
     colorByAppId,
     appFilter,
     setAppFilter,
+    locationFilter,
+    setLocationFilter,
     fromDate,
     setFromDate,
     toDate,
@@ -42,7 +44,7 @@ export function AllTimeFocusView({
     visibleShifts,
     footerItems,
     footerTitle,
-  } = useAllTimeFocusData({ apps, shifts });
+  } = useAllTimeFocusData({ apps, locations, shifts });
 
   return (
     <>
@@ -83,6 +85,8 @@ export function AllTimeFocusView({
               colorByAppId={colorByAppId}
               appFilter={appFilter}
               setAppFilter={setAppFilter}
+              locationFilter={locationFilter}
+              setLocationFilter={setLocationFilter}
               fromDate={fromDate}
               setFromDate={setFromDate}
               toDate={toDate}
@@ -124,6 +128,8 @@ export function AllTimeFocusView({
         visibleShifts={visibleShifts}
         appFilter={appFilter}
         setAppFilter={setAppFilter}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
         fromDate={fromDate}
         setFromDate={setFromDate}
         toDate={toDate}

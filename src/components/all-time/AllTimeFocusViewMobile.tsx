@@ -23,6 +23,8 @@ interface AllTimeFocusViewMobileProps {
   visibleShifts: ShiftWithApp[];
   appFilter: "all" | number;
   setAppFilter: (value: "all" | number) => void;
+  locationFilter: "all" | number;
+  setLocationFilter: (value: "all" | number) => void;
   fromDate: string;
   setFromDate: (value: string) => void;
   toDate: string;
@@ -53,6 +55,8 @@ export function AllTimeFocusViewMobile({
   visibleShifts,
   appFilter,
   setAppFilter,
+  locationFilter,
+  setLocationFilter,
   fromDate,
   setFromDate,
   toDate,
@@ -138,6 +142,8 @@ export function AllTimeFocusViewMobile({
               colorByAppId={colorByAppId}
               appFilter={appFilter}
               setAppFilter={setAppFilter}
+              locationFilter={locationFilter}
+              setLocationFilter={setLocationFilter}
               fromDate={fromDate}
               setFromDate={setFromDate}
               toDate={toDate}

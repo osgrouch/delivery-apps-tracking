@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { computeTotals, type DashboardTotals } from "@/lib/utils/aggregate";
 import { formatCurrency, formatNumber, formatShortDate, formatShortDateWithYear } from "@/lib/utils/format";
-import type { App, ShiftWithApp } from "@/types/database.types";
+import type { App, Location, ShiftWithApp } from "@/types/database.types";
 
 export type SortOption =
   | "date-desc"
@@ -16,7 +16,9 @@ export type SortOption =
   | "miles-desc"
   | "miles-asc"
   | "trips-desc"
-  | "trips-asc";
+  | "trips-asc"
+  | "location-asc"
+  | "location-desc";
 
 export const SORT_LABELS: Record<SortOption, string> = {
   "date-desc": "Date (Newest first)",
@@ -29,7 +31,27 @@ export const SORT_LABELS: Record<SortOption, string> = {
   "miles-asc": "Miles (Low to High)",
   "trips-desc": "Trips (High to Low)",
   "trips-asc": "Trips (Low to High)",
+  "location-asc": "Location (A to Z)",
+  "location-desc": "Location (Z to A)",
 };
+
+/**
+ * Groups shifts by location name, newest-first inside each group — without the
+ * date tiebreak, shifts sharing a location would come out in arbitrary order.
+ * Shifts with no location sink to the bottom in both directions.
+ */
+function byLocation(direction: 1 | -1) {
+  return (a: ShiftWithApp, b: ShiftWithApp) => {
+    const aName = a.location?.name ?? "";
+    const bName = b.location?.name ?? "";
+    if (aName !== bName) {
+      if (!aName) return 1;
+      if (!bName) return -1;
+      return direction * aName.localeCompare(bName);
+    }
+    return b.date.localeCompare(a.date);
+  };
+}
 
 const SORT_COMPARATORS: Record<SortOption, (a: ShiftWithApp, b: ShiftWithApp) => number> = {
   "date-desc": (a, b) => b.date.localeCompare(a.date),
@@ -42,10 +64,13 @@ const SORT_COMPARATORS: Record<SortOption, (a: ShiftWithApp, b: ShiftWithApp) =>
   "miles-asc": (a, b) => a.mileage - b.mileage,
   "trips-desc": (a, b) => b.trips - a.trips,
   "trips-asc": (a, b) => a.trips - b.trips,
+  "location-asc": byLocation(1),
+  "location-desc": byLocation(-1),
 };
 
 interface UseAllTimeFocusDataArgs {
   apps: App[];
+  locations: Location[];
   shifts: ShiftWithApp[];
 }
 
@@ -58,6 +83,8 @@ interface UseAllTimeFocusDataResult {
   colorByAppId: Map<number, string>;
   appFilter: "all" | number;
   setAppFilter: (value: "all" | number) => void;
+  locationFilter: "all" | number;
+  setLocationFilter: (value: "all" | number) => void;
   fromDate: string;
   setFromDate: (value: string) => void;
   toDate: string;
@@ -71,10 +98,15 @@ interface UseAllTimeFocusDataResult {
 }
 
 /** Shared filter/sort state and derived table/footer data for both the desktop and mobile /all-time trees. */
-export function useAllTimeFocusData({ apps, shifts }: UseAllTimeFocusDataArgs): UseAllTimeFocusDataResult {
+export function useAllTimeFocusData({
+  apps,
+  locations,
+  shifts,
+}: UseAllTimeFocusDataArgs): UseAllTimeFocusDataResult {
   const colorByAppId = useMemo(() => new Map(apps.map((app) => [app.id, app.color])), [apps]);
 
   const [appFilter, setAppFilter] = useState<"all" | number>("all");
+  const [locationFilter, setLocationFilter] = useState<"all" | number>("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("date-desc");
@@ -82,24 +114,33 @@ export function useAllTimeFocusData({ apps, shifts }: UseAllTimeFocusDataArgs): 
   const visibleShifts = useMemo(() => {
     const filtered = shifts.filter((shift) => {
       if (appFilter !== "all" && shift.app.id !== appFilter) return false;
+      // Shifts predating the locations table have no location, so picking a
+      // specific one correctly hides them.
+      if (locationFilter !== "all" && shift.location?.id !== locationFilter) return false;
       if (fromDate && shift.date < fromDate) return false;
       if (toDate && shift.date > toDate) return false;
       return true;
     });
     return filtered.sort(SORT_COMPARATORS[sortOption]);
-  }, [shifts, appFilter, fromDate, toDate, sortOption]);
+  }, [shifts, appFilter, locationFilter, fromDate, toDate, sortOption]);
 
   const visibleTotals = useMemo(() => computeTotals(visibleShifts), [visibleShifts]);
 
   const footerTitle = useMemo(() => {
     const hasDateFilter = Boolean(fromDate || toDate);
+    const locationLabel =
+      locationFilter === "all"
+        ? null
+        : (locations.find((location) => location.id === locationFilter)?.name ?? null);
+    const withLocation = (label: string) => (locationLabel ? `${label} in ${locationLabel}` : label);
 
     if (appFilter === "all") {
-      return hasDateFilter ? "All Apps" : "All Time";
+      if (!hasDateFilter && !locationLabel) return "All Time";
+      return withLocation("All Apps");
     }
 
     const appLabel = apps.find((app) => app.id === appFilter)?.name ?? "All Apps";
-    if (!hasDateFilter) return appLabel;
+    if (!hasDateFilter) return withLocation(appLabel);
 
     const spansYears = fromDate && toDate && fromDate.slice(0, 4) !== toDate.slice(0, 4);
     const formatRangeDate = spansYears ? formatShortDateWithYear : formatShortDate;
@@ -109,8 +150,8 @@ export function useAllTimeFocusData({ apps, shifts }: UseAllTimeFocusDataArgs): 
         : fromDate
           ? `From ${formatRangeDate(fromDate)}`
           : `Through ${formatRangeDate(toDate)}`;
-    return `${appLabel}: ${dateLabel}`;
-  }, [apps, appFilter, fromDate, toDate]);
+    return `${withLocation(appLabel)}: ${dateLabel}`;
+  }, [apps, appFilter, locations, locationFilter, fromDate, toDate]);
 
   const footerItems = useMemo(
     () => [
@@ -128,6 +169,8 @@ export function useAllTimeFocusData({ apps, shifts }: UseAllTimeFocusDataArgs): 
     colorByAppId,
     appFilter,
     setAppFilter,
+    locationFilter,
+    setLocationFilter,
     fromDate,
     setFromDate,
     toDate,
